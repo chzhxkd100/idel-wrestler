@@ -9,6 +9,7 @@ export class GameRoom extends Room<GameState> {
   private gameLoop: any;
   private dayNightTimer: number = 0;
   private hotTimeTimer: number = 0;
+  private weatherTimer: number = 0;
 
   onCreate(options: any) {
     this.setState(new GameState());
@@ -140,6 +141,12 @@ export class GameRoom extends Room<GameState> {
           } else {
               this.broadcast("chat_message", { targetId: player.id, message: `[System] You must be Level 50 to rebirth.` });
           }
+          return;
+      }
+      if (msg.trim() === "/pet") {
+          player.hasPet = !player.hasPet;
+          const status = player.hasPet ? "summoned" : "unsummoned";
+          this.broadcast("chat_message", { targetId: player.id, message: `[System] You have ${status} your pet!` });
           return;
       }
 
@@ -453,6 +460,23 @@ export class GameRoom extends Room<GameState> {
             this.broadcast("chat_message", { targetId: "SYSTEM", message: "🔥 HOT TIME STARTED! 2X EXP! 🔥" });
         } else {
             this.broadcast("chat_message", { targetId: "SYSTEM", message: "HOT TIME ENDED." });
+        }
+    }
+
+    // Weather Cycle
+    this.weatherTimer += deltaTime;
+    if (this.weatherTimer >= 90000) { // 90 seconds
+        this.weatherTimer -= 90000;
+        const roll = Math.random();
+        if (roll < 0.33) {
+            this.state.weather = "clear";
+            this.broadcast("chat_message", { targetId: "SYSTEM", message: "The sky clears up." });
+        } else if (roll < 0.66) {
+            this.state.weather = "rain";
+            this.broadcast("chat_message", { targetId: "SYSTEM", message: "It started to rain." });
+        } else {
+            this.state.weather = "snow";
+            this.broadcast("chat_message", { targetId: "SYSTEM", message: "Snow is falling from the sky." });
         }
     }
 

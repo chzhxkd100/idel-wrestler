@@ -24,6 +24,7 @@ export interface IPlayerState {
   isMounted: boolean;
   hasWeapon: boolean;
   rebirthCount: number;
+  hasPet: boolean;
 }
 
 export interface IMonsterState {
@@ -44,6 +45,7 @@ export interface IGameState {
   npcs: Map<string, INpcState>;
   isNight: boolean;
   isHotTime: boolean;
+  weather: string;
 }
 
 export interface IItemState {

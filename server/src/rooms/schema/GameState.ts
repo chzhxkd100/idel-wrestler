@@ -27,6 +27,7 @@ export class Player extends Schema implements IPlayerState {
   @type("boolean") isMounted: boolean;
   @type("boolean") hasWeapon: boolean;
   @type("number") rebirthCount: number;
+  @type("boolean") hasPet: boolean;
 
   constructor(id: string, name: string) {
     super();
@@ -54,6 +55,7 @@ export class Player extends Schema implements IPlayerState {
     this.isMounted = false;
     this.hasWeapon = false;
     this.rebirthCount = 0;
+    this.hasPet = false;
     this.inventory.set("gold", 0);
   }
 }
@@ -142,4 +144,5 @@ export class GameState extends Schema {
   @type({ map: Npc }) npcs = new MapSchema<Npc>();
   @type("boolean") isNight: boolean = false;
   @type("boolean") isHotTime: boolean = false;
+  @type("string") weather: string = "clear";
 }

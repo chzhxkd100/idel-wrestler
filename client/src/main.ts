@@ -37,6 +37,8 @@ class GameScene extends Phaser.Scene {
   private bgImage!: Phaser.GameObjects.Image;
   private hotTimeText!: Phaser.GameObjects.Text;
   private auras: { [id: string]: Phaser.GameObjects.Particles.ParticleEmitter } = {};
+  private pets: { [id: string]: Phaser.GameObjects.Sprite } = {};
+  private weatherEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
 
   constructor() {
     super("GameScene");
@@ -90,6 +92,14 @@ class GameScene extends Phaser.Scene {
     this.add.text(10, 550, "Z:Skill | Shift:Pick | B:Heal | Q:Quest | F:Fighter | G:Grappler | I:Inv | P:Shop", { fontSize: '18px', color: '#fff' });
 
     this.minimapGraphics = this.add.graphics();
+    this.weatherEmitter = this.add.particles(400, 0, 'skill', {
+        speedY: { min: 100, max: 200 },
+        x: { min: 0, max: 800 },
+        lifespan: 3000,
+        scale: { start: 0.1, end: 0 },
+        quantity: 0
+    });
+    this.weatherEmitter.setDepth(100); // Draw weather on top
 
     try {
       this.myUsername = (window as any).GAME_USERNAME || "Guest";
@@ -252,6 +262,35 @@ class GameScene extends Phaser.Scene {
                      if (this.hotTimeText) this.hotTimeText.destroy();
                  }
              }
+             if (change.field === "weather") {
+                 if (this.weatherEmitter) this.weatherEmitter.destroy();
+                 
+                 if (change.value === "clear") {
+                     this.weatherEmitter = this.add.particles(400, 0, 'skill', { quantity: 0 });
+                 } else if (change.value === "rain") {
+                     this.weatherEmitter = this.add.particles(400, 0, 'skill', {
+                         speedY: { min: 300, max: 400 },
+                         speedX: 50,
+                         x: { min: 0, max: 800 },
+                         lifespan: 3000,
+                         scale: { start: 0.1, end: 0 },
+                         quantity: 2,
+                         tint: 0x00aaff
+                     });
+                     this.weatherEmitter.setDepth(100);
+                 } else if (change.value === "snow") {
+                     this.weatherEmitter = this.add.particles(400, 0, 'skill', {
+                         speedY: { min: 50, max: 100 },
+                         speedX: { min: -20, max: 20 },
+                         x: { min: 0, max: 800 },
+                         lifespan: 5000,
+                         scale: { start: 0.1, end: 0 },
+                         quantity: 1,
+                         tint: 0xffffff
+                     });
+                     this.weatherEmitter.setDepth(100);
+                 }
+             }
          });
       });
 
@@ -360,6 +399,24 @@ class GameScene extends Phaser.Scene {
               }
           }
 
+          if (player.hasPet) {
+              if (!this.pets[sessionId]) {
+                  this.pets[sessionId] = this.add.sprite(player.x, player.y, "monster");
+                  this.pets[sessionId].setScale(0.15);
+                  this.pets[sessionId].setTint(0xffcccc);
+              }
+              // Lerp pet to player
+              const targetX = player.x - 30;
+              const targetY = player.y + 20;
+              this.pets[sessionId].x += (targetX - this.pets[sessionId].x) * 0.1;
+              this.pets[sessionId].y += (targetY - this.pets[sessionId].y) * 0.1;
+          } else {
+              if (this.pets[sessionId]) {
+                  this.pets[sessionId].destroy();
+                  delete this.pets[sessionId];
+              }
+          }
+
           if (sessionId === this.room.sessionId) {
               this.myExpText.setText(`EXP: ${player.exp}/${player.maxExp}`);
               this.myLevelText.setText(`LVL: ${player.level}`);
@@ -402,6 +459,10 @@ class GameScene extends Phaser.Scene {
         if (this.auras[sessionId]) {
           this.auras[sessionId].destroy();
           delete this.auras[sessionId];
+        }
+        if (this.pets[sessionId]) {
+          this.pets[sessionId].destroy();
+          delete this.pets[sessionId];
         }
         this.updateLeaderboard();
       });
