@@ -327,13 +327,25 @@ export class GameRoom extends Room<GameState> {
           }
 
           if (data.targetId === attacker.id) return;
-          const isCrit = Math.random() < 0.1;
+          let isCrit = Math.random() < 0.1;
           const baseDamage = data.isMonster ? attacker.str + (attacker.hasBelt ? 20 : 0) + (attacker.hasWeapon ? 100 : 0) : ((target as any).damage || 10);
-          const damage = isCrit ? baseDamage * 2 : baseDamage;
+          let damage = isCrit ? baseDamage * 2 : baseDamage;
+          let isMiss = false;
+
+          // Dodge calculation for Player target
+          if (!data.isMonster) {
+              const targetPlayer = target as Player;
+              const dodgeChance = Math.min(50, targetPlayer.agi * 0.5) / 100;
+              if (Math.random() < dodgeChance) {
+                  damage = 0;
+                  isMiss = true;
+                  isCrit = false;
+              }
+          }
           
           if (data.isMonster) {
               target.hp -= damage;
-              this.broadcast("damage", { targetId: data.targetId, damage, isCrit });
+              this.broadcast("damage", { targetId: data.targetId, damage, isCrit, isMiss, jobClass: attacker.jobClass });
 
               if (target.hp <= 0) {
                   target.hp = 0;
@@ -398,8 +410,12 @@ export class GameRoom extends Room<GameState> {
                  return;
              }
 
-             deadPlayer.hp -= damage;
-             this.broadcast("damage", { targetId: data.targetId, damage, isCrit });
+             if (isMiss) {
+                 this.broadcast("damage", { targetId: data.targetId, damage: 0, isCrit: false, isMiss: true, jobClass: attacker.jobClass });
+             } else {
+                 deadPlayer.hp -= damage;
+                 this.broadcast("damage", { targetId: data.targetId, damage, isCrit, isMiss: false, jobClass: attacker.jobClass });
+             }
 
              if (deadPlayer.hp <= 0) {
                  deadPlayer.hp = 0;

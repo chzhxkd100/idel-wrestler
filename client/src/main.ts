@@ -113,28 +113,43 @@ class GameScene extends Phaser.Scene {
       console.log("Joined room:", this.room.roomId);
 
       this.room.onMessage("damage", (message) => {
-        const { targetId, damage, isCrit } = message;
+        const { targetId, damage, isCrit, isMiss, jobClass } = message;
         let target = this.players[targetId] || this.monsters[targetId];
         if (target) {
-          if (isCrit) {
-             const dmgText = this.add.text(target.x, target.y - 50, `CRITICAL! -${damage}`, { fontSize: '32px', color: '#ffff00', fontStyle: 'bold' });
+          if (isMiss) {
+             const dmgText = this.add.text(target.x, target.y - 50, `MISS!`, { fontSize: '24px', color: '#aaaaaa', fontStyle: 'bold' });
              this.tweens.add({
-                targets: dmgText,
-                y: target.y - 120,
-                scale: 1.5,
-                alpha: 0,
-                duration: 1500,
-                onComplete: () => dmgText.destroy()
+                 targets: dmgText,
+                 y: target.y - 120,
+                 alpha: 0,
+                 duration: 1000,
+                 onComplete: () => dmgText.destroy()
              });
           } else {
-             const dmgText = this.add.text(target.x, target.y - 50, `-${damage}`, { fontSize: '20px', color: '#ff0000', fontStyle: 'bold' });
-             this.tweens.add({
-               targets: dmgText,
-               y: target.y - 100,
-               alpha: 0,
-               duration: 1000,
-               onComplete: () => dmgText.destroy()
-             });
+              let color = '#ff0000'; // Default monster/normal color
+              if (jobClass === "Fighter") color = '#ff3333';
+              else if (jobClass === "Grappler") color = '#bb33ff';
+
+              if (isCrit) {
+                 const dmgText = this.add.text(target.x, target.y - 50, `CRITICAL! -${damage}`, { fontSize: '32px', color: color, stroke: '#ffff00', strokeThickness: 3, fontStyle: 'bold' });
+                 this.tweens.add({
+                    targets: dmgText,
+                    y: target.y - 120,
+                    scale: 1.5,
+                    alpha: 0,
+                    duration: 1500,
+                    onComplete: () => dmgText.destroy()
+                 });
+              } else {
+                 const dmgText = this.add.text(target.x, target.y - 50, `-${damage}`, { fontSize: '20px', color: color, fontStyle: 'bold' });
+                 this.tweens.add({
+                   targets: dmgText,
+                   y: target.y - 100,
+                   alpha: 0,
+                   duration: 1000,
+                   onComplete: () => dmgText.destroy()
+                 });
+              }
           }
         }
       });
