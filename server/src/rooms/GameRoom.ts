@@ -316,7 +316,17 @@ export class GameRoom extends Room<GameState> {
       const attacker = this.state.players.get(client.sessionId);
       const target = this.state.players.get(data.targetId) || this.state.monsters.get(data.targetId);
       
-      if (attacker && target) {
+      if (attacker && target && attacker.hp > 0 && target.hp > 0) {
+          if (attacker.x >= 350 && attacker.x <= 450) {
+              this.broadcast("chat_message", { targetId: attacker.id, message: "[System] You cannot attack in the Safe Zone." });
+              return;
+          }
+          if ((target as any).x >= 350 && (target as any).x <= 450 && !(target as any).isBoss) {
+              this.broadcast("chat_message", { targetId: attacker.id, message: "[System] Target is in the Safe Zone." });
+              return;
+          }
+
+          if (data.targetId === attacker.id) return;
           const isCrit = Math.random() < 0.1;
           const baseDamage = data.isMonster ? attacker.str + (attacker.hasBelt ? 20 : 0) + (attacker.hasWeapon ? 100 : 0) : ((target as any).damage || 10);
           const damage = isCrit ? baseDamage * 2 : baseDamage;
@@ -420,9 +430,10 @@ export class GameRoom extends Room<GameState> {
     this.state.npcs.set(shopNpc.id, shopNpc);
 
     // Spawn initial monsters
-    for (let i = 0; i < 5; i++) {
-      const m = new Monster(`monster_${i}`);
-      this.state.monsters.set(m.id, m);
+    if (this.state.monsters.size < 10 && !this.state.isNight) {
+        const m = new Monster(`monster_${Date.now()}`);
+        if (m.x >= 350 && m.x <= 450) m.x = 200; // Push out of safe zone
+        this.state.monsters.set(m.id, m);
     }
 
     // Spawn initial boss (rarely)
@@ -480,10 +491,14 @@ export class GameRoom extends Room<GameState> {
         }
     }
 
-    // Regenerate MP
+    // Regenerate MP & Safe Zone HP
     this.state.players.forEach(player => {
        if (player.hp > 0 && player.mp < player.maxMp) {
-           player.mp = Math.min(player.maxMp, player.mp + 0.1);
+           player.mp = Math.min(player.maxMp, player.mp + 1);
+       }
+       if (player.hp > 0 && player.x >= 350 && player.x <= 450) {
+           player.hp = Math.min(player.maxHp, player.hp + 5);
+           player.mp = Math.min(player.maxMp, player.mp + 5);
        }
     });
 
@@ -499,6 +514,7 @@ export class GameRoom extends Room<GameState> {
        if (Math.random() < 0.05) { 
           const newId = `monster_${Date.now()}`;
           const m = new Monster(newId);
+          if (m.x >= 350 && m.x <= 450) m.x = 200; // Push out of safe zone
           this.state.monsters.set(newId, m);
        }
     }

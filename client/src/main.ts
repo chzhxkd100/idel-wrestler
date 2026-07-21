@@ -32,6 +32,9 @@ class GameScene extends Phaser.Scene {
   private grapplerKey!: Phaser.Input.Keyboard.Key;
   private invKey!: Phaser.Input.Keyboard.Key;
   private shopKey!: Phaser.Input.Keyboard.Key;
+  private emote4Key!: Phaser.Input.Keyboard.Key;
+  private emote5Key!: Phaser.Input.Keyboard.Key;
+  private emote6Key!: Phaser.Input.Keyboard.Key;
   private isChatting: boolean = false;
   private minimapGraphics!: Phaser.GameObjects.Graphics;
   private bgImage!: Phaser.GameObjects.Image;
@@ -67,6 +70,9 @@ class GameScene extends Phaser.Scene {
     this.statStrKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.ONE);
     this.statAgiKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.TWO);
     this.statVitKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.THREE);
+    this.emote4Key = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.FOUR);
+    this.emote5Key = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.FIVE);
+    this.emote6Key = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SIX);
     this.questKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
     this.enterKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
     this.fighterKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.F);
@@ -653,6 +659,16 @@ class GameScene extends Phaser.Scene {
           if (shopUi) {
               shopUi.style.display = (shopUi.style.display === "none" || shopUi.style.display === "") ? "block" : "none";
           }
+      }
+
+      if (Phaser.Input.Keyboard.JustDown(this.emote4Key) && !this.isChatting) {
+          this.room.send("chat_message", "😀");
+      }
+      if (Phaser.Input.Keyboard.JustDown(this.emote5Key) && !this.isChatting) {
+          this.room.send("chat_message", "😠");
+      }
+      if (Phaser.Input.Keyboard.JustDown(this.emote6Key) && !this.isChatting) {
+          this.room.send("chat_message", "😭");
       }
 
     let moved = false;
