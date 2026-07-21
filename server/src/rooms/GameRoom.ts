@@ -101,6 +101,17 @@ export class GameRoom extends Room<GameState> {
       console.log(`[Chat] ${player.name}: ${data.message}`);
     });
 
+    this.onMessage("change_job", (client, data) => {
+      const player = this.state.players.get(client.sessionId);
+      if (!player || player.level < 10 || player.jobClass !== "Novice") return;
+      
+      if (data.job === "Fighter" || data.job === "Grappler") {
+          player.jobClass = data.job;
+          console.log(`${player.name} advanced to ${player.jobClass}!`);
+          this.broadcast("quest_complete", { targetId: player.id }); // Reuse effect
+      }
+    });
+
     this.onMessage("skill_cast", (client, data) => {
       const player = this.state.players.get(client.sessionId);
       if (!player || player.hp <= 0) return;
@@ -140,6 +151,16 @@ export class GameRoom extends Room<GameState> {
                    player.maxMp += 10;
                    player.mp = player.maxMp;
                    player.sp += 5; // Give SP
+                   
+                   // Job Bonus
+                   if (player.jobClass === "Fighter") {
+                       player.str += 2; // Fighter gets extra STR
+                   } else if (player.jobClass === "Grappler") {
+                       player.vit += 2; // Grappler gets extra VIT
+                       player.maxHp += 20;
+                       player.hp += 20;
+                   }
+
                    this.broadcast("levelup", { playerId: player.id, level: player.level });
                 }
                 
@@ -221,6 +242,16 @@ export class GameRoom extends Room<GameState> {
                attacker.maxMp += 10;
                attacker.mp = attacker.maxMp;
                attacker.sp += 5;
+
+               // Job Bonus
+               if (attacker.jobClass === "Fighter") {
+                   attacker.str += 2;
+               } else if (attacker.jobClass === "Grappler") {
+                   attacker.vit += 2;
+                   attacker.maxHp += 20;
+                   attacker.hp += 20;
+               }
+
                this.broadcast("levelup", { playerId: attacker.id, level: attacker.level });
             }
 
@@ -391,6 +422,7 @@ export class GameRoom extends Room<GameState> {
     player.hasBelt = dbUser.hasBelt;
     player.questStatus = dbUser.questStatus;
     player.questProgress = dbUser.questProgress;
+    player.jobClass = dbUser.jobClass;
     player.inventory.set("gold", dbUser.gold);
 
     this.state.players.set(client.sessionId, player);
@@ -417,7 +449,8 @@ export class GameRoom extends Room<GameState> {
                vit: player.vit,
                hasBelt: player.hasBelt,
                questStatus: player.questStatus,
-               questProgress: player.questProgress
+               questProgress: player.questProgress,
+               jobClass: player.jobClass
            }
        });
     }

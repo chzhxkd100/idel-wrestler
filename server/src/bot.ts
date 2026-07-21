@@ -40,6 +40,18 @@ async function startBot() {
       if (myPlayer.sp > 0) {
           room.send("add_stat", { stat: "str" });
           console.log("Bot allocated SP to STR");
+            // Buy heal if hp is low
+          if (myPlayer.hp < myPlayer.maxHp * 0.3) {
+             room.send("buy_heal");
+          }
+
+          // Advance Job if Level >= 10
+          if (myPlayer.level >= 10 && myPlayer.jobClass === "Novice") {
+             const jobs = ["Fighter", "Grappler"];
+             const pickedJob = jobs[Math.floor(Math.random() * jobs.length)];
+             room.send("change_job", { job: pickedJob });
+             console.log(`${botName} changed job to ${pickedJob}!`);
+          }
       }
 
       // Heal if low HP

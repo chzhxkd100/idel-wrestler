@@ -21,6 +21,7 @@ export class Player extends Schema implements IPlayerState {
   @type("boolean") hasBelt: boolean;
   @type("number") questStatus: number;
   @type("number") questProgress: number;
+  @type("string") jobClass: string;
 
   constructor(id: string, name: string) {
     super();
@@ -42,6 +43,7 @@ export class Player extends Schema implements IPlayerState {
     this.hasBelt = false;
     this.questStatus = 0;
     this.questProgress = 0;
+    this.jobClass = "Novice";
     this.inventory.set("gold", 0);
   }
 }

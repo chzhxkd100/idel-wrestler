@@ -18,6 +18,7 @@ export interface IPlayerState {
   hasBelt: boolean;
   questStatus: number;
   questProgress: number;
+  jobClass: string;
 }
 
 export interface IMonsterState {

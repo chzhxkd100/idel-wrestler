@@ -28,7 +28,10 @@ class GameScene extends Phaser.Scene {
   private myLeaderboardText!: Phaser.GameObjects.Text;
   private questKey!: Phaser.Input.Keyboard.Key;
   private enterKey!: Phaser.Input.Keyboard.Key;
+  private fighterKey!: Phaser.Input.Keyboard.Key;
+  private grapplerKey!: Phaser.Input.Keyboard.Key;
   private isChatting: boolean = false;
+  private minimapGraphics!: Phaser.GameObjects.Graphics;
 
   constructor() {
     super("GameScene");
@@ -57,6 +60,8 @@ class GameScene extends Phaser.Scene {
     this.statVitKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.THREE);
     this.questKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
     this.enterKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
+    this.fighterKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.F);
+    this.grapplerKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.G);
 
     this.myLevelText = this.add.text(10, 10, "LVL: 1", { fontSize: '24px', color: '#fff' });
     this.myExpText = this.add.text(10, 40, "EXP: 0/100", { fontSize: '24px', color: '#fff' });
@@ -65,7 +70,9 @@ class GameScene extends Phaser.Scene {
     this.myStatsText = this.add.text(600, 10, "SP: 0\n1: STR 10\n2: AGI 10\n3: VIT 10", { fontSize: '20px', color: '#ffcc00', align: 'right' });
     this.myQuestText = this.add.text(600, 120, "No Quest", { fontSize: '20px', color: '#ff00ff', align: 'right' });
     this.myLeaderboardText = this.add.text(600, 200, "👑 TOP RANKERS 👑\n...", { fontSize: '20px', color: '#ffffff', align: 'right' });
-    this.add.text(10, 550, "Z: Skill | Shift: Pickup | B: Buy Heal(50G) | Q: Quest", { fontSize: '20px', color: '#fff' });
+    this.add.text(10, 550, "Z:Skill | Shift:Pick | B:Heal | Q:Quest | F:Fighter | G:Grappler", { fontSize: '18px', color: '#fff' });
+
+    this.minimapGraphics = this.add.graphics();
 
     try {
       this.myUsername = (window as any).GAME_USERNAME || "Guest";
@@ -200,7 +207,12 @@ class GameScene extends Phaser.Scene {
         const hpText = this.add.text(player.x, player.y - 40, `HP: ${player.hp}/${player.maxHp}`, { fontSize: '12px', color: '#0f0' });
         hpText.setOrigin(0.5);
         this.uiTexts[sessionId] = hpText;
-        
+
+        const nameStr = `[${player.jobClass}] ${player.name || "Wrestler"}`;
+        const nameText = this.add.text(player.x, player.y - 70, nameStr, { fontSize: '14px', color: '#fff', fontStyle: 'bold' });
+        nameText.setOrigin(0.5);
+        this.uiTexts[sessionId + "_name"] = nameText;
+
         let beltIcon: Phaser.GameObjects.Sprite | null = null;
         if (player.hasBelt) {
             beltIcon = this.add.sprite(player.x + 30, player.y - 30, "belt");
@@ -211,9 +223,17 @@ class GameScene extends Phaser.Scene {
         player.onChange(() => {
           sprite.x = player.x;
           sprite.y = player.y;
-          hpText.x = player.x;
-          hpText.y = player.y - 40;
-          hpText.setText(`HP: ${player.hp}/${player.maxHp}`);
+          
+          if (this.uiTexts[sessionId]) {
+              this.uiTexts[sessionId].x = player.x;
+              this.uiTexts[sessionId].y = player.y - 40;
+              this.uiTexts[sessionId].setText(`HP: ${player.hp}/${player.maxHp}`);
+          }
+          if (this.uiTexts[sessionId + "_name"]) {
+              this.uiTexts[sessionId + "_name"].x = player.x;
+              this.uiTexts[sessionId + "_name"].y = player.y - 70;
+              this.uiTexts[sessionId + "_name"].setText(`[${player.jobClass}] ${player.name || "Wrestler"}`);
+          }
           
           if (player.hasBelt && !beltIcon) {
               beltIcon = this.add.sprite(player.x + 30, player.y - 30, "belt");
@@ -350,8 +370,55 @@ class GameScene extends Phaser.Scene {
       this.myLeaderboardText.setText(topText);
   }
 
+  drawMinimap() {
+      this.minimapGraphics.clear();
+      const mapWidth = 800;
+      const mapHeight = 600;
+      const miniWidth = 150;
+      const miniHeight = 110;
+      const startX = 800 - miniWidth - 10;
+      const startY = 600 - miniHeight - 30; // Above keyboard hints
+
+      // Draw minimap background
+      this.minimapGraphics.fillStyle(0x000000, 0.5);
+      this.minimapGraphics.fillRect(startX, startY, miniWidth, miniHeight);
+      this.minimapGraphics.lineStyle(2, 0xffffff, 0.8);
+      this.minimapGraphics.strokeRect(startX, startY, miniWidth, miniHeight);
+
+      if (!this.room || !this.room.state) return;
+
+      // Draw players
+      this.room.state.players.forEach((p: any, id: string) => {
+          if (p.hp > 0) {
+              const mx = startX + (p.x / mapWidth) * miniWidth;
+              const my = startY + (p.y / mapHeight) * miniHeight;
+              this.minimapGraphics.fillStyle(id === this.room.sessionId ? 0xffffff : 0x0000ff, 1);
+              this.minimapGraphics.fillCircle(mx, my, 3);
+          }
+      });
+
+      // Draw monsters
+      this.room.state.monsters.forEach((m: any) => {
+          if (m.hp > 0) {
+              const mx = startX + (m.x / mapWidth) * miniWidth;
+              const my = startY + (m.y / mapHeight) * miniHeight;
+              this.minimapGraphics.fillStyle(m.isBoss ? 0xff0000 : 0xffaa00, 1);
+              this.minimapGraphics.fillCircle(mx, my, m.isBoss ? 5 : 2);
+          }
+      });
+  }
+
   update() {
+    this.drawMinimap();
+
     if (!this.room) return;
+
+    if (Phaser.Input.Keyboard.JustDown(this.fighterKey)) {
+        this.room.send("change_job", { job: "Fighter" });
+    }
+    if (Phaser.Input.Keyboard.JustDown(this.grapplerKey)) {
+        this.room.send("change_job", { job: "Grappler" });
+    }
 
     if (Phaser.Input.Keyboard.JustDown(this.enterKey)) {
         if (!this.isChatting) {
