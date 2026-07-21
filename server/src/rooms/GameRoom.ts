@@ -1,5 +1,5 @@
 import { Room, Client } from "@colyseus/core";
-import { GameState, Player, Monster, Item } from "./schema/GameState";
+import { GameState, Player, Monster, Item, Npc } from "./schema/GameState";
 import { prisma } from "../db";
 
 export class GameRoom extends Room<GameState> {
@@ -33,6 +33,22 @@ export class GameRoom extends Room<GameState> {
           console.log(`${player.name} picked up ${item.amount} ${item.type}`);
         }
       });
+    });
+
+    this.onMessage("buy_heal", (client) => {
+      const player = this.state.players.get(client.sessionId);
+      if (!player) return;
+
+      const healCost = 50;
+      const currentGold = player.inventory.get("gold") || 0;
+
+      if (currentGold >= healCost) {
+         player.inventory.set("gold", currentGold - healCost);
+         player.hp = player.maxHp;
+         player.mp = player.maxMp;
+         console.log(`${player.name} bought a heal!`);
+         this.broadcast("heal_effect", { targetId: player.id });
+      }
     });
 
     this.onMessage("skill_cast", (client, data) => {
@@ -113,8 +129,13 @@ export class GameRoom extends Room<GameState> {
             }
 
             // Drop Item
-            if (Math.random() < 0.5) { // 50% drop rate
-              const dropAmount = Math.floor(Math.random() * 50) + 10;
+            let isTargetBoss = false;
+            if (target instanceof Monster) {
+               isTargetBoss = target.isBoss;
+            }
+
+            if (isTargetBoss || Math.random() < 0.5) { // Boss drops guaranteed, 50% for normal
+              const dropAmount = isTargetBoss ? Math.floor(Math.random() * 200) + 100 : Math.floor(Math.random() * 50) + 10;
               const item = new Item(`item_${Date.now()}_${data.targetId}`, "gold", dropAmount, target.x, target.y);
               this.state.items.set(item.id, item);
             }
@@ -125,10 +146,20 @@ export class GameRoom extends Room<GameState> {
       }
     });
 
+    // Spawn NPC
+    const shopNpc = new Npc("npc_shop", "Manager", 400, 300);
+    this.state.npcs.set(shopNpc.id, shopNpc);
+
     // Spawn initial monsters
     for (let i = 0; i < 5; i++) {
       const m = new Monster(`monster_${i}`);
       this.state.monsters.set(m.id, m);
+    }
+
+    // Spawn initial boss (rarely)
+    if (Math.random() < 0.5) {
+       const boss = new Monster(`boss_${Date.now()}`, true);
+       this.state.monsters.set(boss.id, boss);
     }
 
     // Set up game loop (server tick)
@@ -143,11 +174,26 @@ export class GameRoom extends Room<GameState> {
        }
     });
 
-    // Respawn Monsters
-    if (this.state.monsters.size < 5) {
-       if (Math.random() < 0.05) { // Random chance to spawn per tick if below max
+    // Respawn Monsters and Bosses
+    let normalCount = 0;
+    let bossCount = 0;
+    this.state.monsters.forEach(m => {
+        if (m.isBoss) bossCount++;
+        else normalCount++;
+    });
+
+    if (normalCount < 5) {
+       if (Math.random() < 0.05) { 
           const newId = `monster_${Date.now()}`;
           const m = new Monster(newId);
+          this.state.monsters.set(newId, m);
+       }
+    }
+    
+    if (bossCount < 1) {
+       if (Math.random() < 0.005) { // Very rare spawn rate for boss
+          const newId = `boss_${Date.now()}`;
+          const m = new Monster(newId, true);
           this.state.monsters.set(newId, m);
        }
     }

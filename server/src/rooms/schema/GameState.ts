@@ -1,5 +1,5 @@
 import { Schema, type, MapSchema } from "@colyseus/schema";
-import { IPlayerState, IMonsterState, IItemState } from "shared";
+import { IPlayerState, IMonsterState, IItemState, INpcState } from "shared";
 
 export class Player extends Schema implements IPlayerState {
   @type("string") id: string;
@@ -39,20 +39,31 @@ export class Monster extends Schema implements IMonsterState {
   @type("number") y: number;
   @type("number") hp: number;
   @type("number") maxHp: number;
+  @type("boolean") isBoss: boolean;
 
   targetId: string | null = null;
   speed: number = 2;
   damage: number = 5;
   expReward: number = 20;
 
-  constructor(id: string) {
+  constructor(id: string, isBoss: boolean = false) {
     super();
     this.id = id;
-    this.type = "goblin";
+    this.type = isBoss ? "boss_ogre" : "goblin";
     this.x = Math.random() * 800;
     this.y = Math.random() * 600;
-    this.maxHp = 50;
-    this.hp = 50;
+    this.isBoss = isBoss;
+
+    if (isBoss) {
+      this.maxHp = 500;
+      this.hp = 500;
+      this.damage = 15;
+      this.speed = 1.5;
+      this.expReward = 200;
+    } else {
+      this.maxHp = 50;
+      this.hp = 50;
+    }
   }
 }
 
@@ -73,8 +84,24 @@ export class Item extends Schema implements IItemState {
   }
 }
 
+export class Npc extends Schema implements INpcState {
+  @type("string") id: string;
+  @type("string") name: string;
+  @type("number") x: number;
+  @type("number") y: number;
+
+  constructor(id: string, name: string, x: number, y: number) {
+    super();
+    this.id = id;
+    this.name = name;
+    this.x = x;
+    this.y = y;
+  }
+}
+
 export class GameState extends Schema {
   @type({ map: Player }) players = new MapSchema<Player>();
   @type({ map: Monster }) monsters = new MapSchema<Monster>();
   @type({ map: Item }) items = new MapSchema<Item>();
+  @type({ map: Npc }) npcs = new MapSchema<Npc>();
 }

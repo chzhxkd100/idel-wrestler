@@ -20,12 +20,20 @@ export interface IMonsterState {
   y: number;
   hp: number;
   maxHp: number;
+  isBoss: boolean;
 }
 
 export interface IItemState {
   id: string;
   type: string;
   amount: number;
+  x: number;
+  y: number;
+}
+
+export interface INpcState {
+  id: string;
+  name: string;
   x: number;
   y: number;
 }

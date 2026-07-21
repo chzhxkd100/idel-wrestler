@@ -7,12 +7,14 @@ class GameScene extends Phaser.Scene {
   private room!: Colyseus.Room;
   private players: { [id: string]: Phaser.GameObjects.Sprite } = {};
   private monsters: { [id: string]: Phaser.GameObjects.Sprite } = {};
+  private npcs: { [id: string]: Phaser.GameObjects.Sprite } = {};
   private items: { [id: string]: Phaser.GameObjects.Sprite } = {};
   private uiTexts: { [id: string]: Phaser.GameObjects.Text } = {};
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private attackKey!: Phaser.Input.Keyboard.Key;
   private pickupKey!: Phaser.Input.Keyboard.Key;
   private skillKey!: Phaser.Input.Keyboard.Key;
+  private buyKey!: Phaser.Input.Keyboard.Key;
   private myLevelText!: Phaser.GameObjects.Text;
   private myExpText!: Phaser.GameObjects.Text;
   private myMpText!: Phaser.GameObjects.Text;
@@ -26,8 +28,10 @@ class GameScene extends Phaser.Scene {
     this.load.image("background", "assets/background.png");
     this.load.image("wrestler", "assets/wrestler.png");
     this.load.image("monster", "assets/monster.png");
+    this.load.image("boss", "assets/boss.png");
     this.load.image("gold", "assets/gold.png");
     this.load.image("skill", "assets/skill.png");
+    this.load.image("npc", "assets/npc.png");
   }
 
   async create() {
@@ -38,11 +42,13 @@ class GameScene extends Phaser.Scene {
     this.attackKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.pickupKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
     this.skillKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
+    this.buyKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.B);
 
     this.myLevelText = this.add.text(10, 10, "LVL: 1", { fontSize: '24px', color: '#fff' });
     this.myExpText = this.add.text(10, 40, "EXP: 0/100", { fontSize: '24px', color: '#fff' });
     this.myMpText = this.add.text(10, 70, "MP: 50/50", { fontSize: '24px', color: '#00ffff' });
     this.myGoldText = this.add.text(10, 100, "GOLD: 0", { fontSize: '24px', color: '#ffff00' });
+    this.add.text(10, 550, "Z: Skill | Shift: Pickup | B: Buy Heal(50G)", { fontSize: '20px', color: '#fff' });
 
     try {
       this.room = await client.joinOrCreate("game");
@@ -74,6 +80,21 @@ class GameScene extends Phaser.Scene {
             duration: 500,
             onComplete: () => effect.destroy()
         });
+      });
+
+      this.room.onMessage("heal_effect", (message) => {
+         const { targetId } = message;
+         const playerSprite = this.players[targetId];
+         if (playerSprite) {
+             const effect = this.add.text(playerSprite.x, playerSprite.y - 20, "+HEAL+", { fontSize: '24px', color: '#00ff00', fontStyle: 'bold' });
+             this.tweens.add({
+                targets: effect,
+                y: playerSprite.y - 60,
+                alpha: 0,
+                duration: 1000,
+                onComplete: () => effect.destroy()
+             });
+         }
       });
 
       this.room.onMessage("levelup", (message) => {
@@ -131,11 +152,18 @@ class GameScene extends Phaser.Scene {
       });
 
       this.room.state.monsters.onAdd((monster: any, id: string) => {
-        const sprite = this.add.sprite(monster.x, monster.y, "monster");
-        sprite.setScale(0.25);
-        this.monsters[id] = sprite;
+        const spriteKey = monster.isBoss ? "boss" : "monster";
+        const sprite = this.add.sprite(monster.x, monster.y, spriteKey);
         
-        const hpText = this.add.text(monster.x, monster.y - 40, `HP: ${monster.hp}/${monster.maxHp}`, { fontSize: '12px', color: '#f00' });
+        if (monster.isBoss) {
+            sprite.setScale(0.8);
+        } else {
+            sprite.setScale(0.3);
+        }
+
+        this.monsters[id] = sprite;
+        const color = monster.isBoss ? '#ff0000' : '#ffaaaa';
+        const hpText = this.add.text(monster.x, monster.y - (monster.isBoss ? 80 : 40), `HP: ${monster.hp}/${monster.maxHp}`, { fontSize: '16px', color });
         hpText.setOrigin(0.5);
         this.uiTexts[id] = hpText;
 
@@ -143,7 +171,7 @@ class GameScene extends Phaser.Scene {
           sprite.x = monster.x;
           sprite.y = monster.y;
           hpText.x = monster.x;
-          hpText.y = monster.y - 40;
+          hpText.y = monster.y - (monster.isBoss ? 80 : 40);
           hpText.setText(`HP: ${monster.hp}/${monster.maxHp}`);
         });
       });
@@ -181,6 +209,20 @@ class GameScene extends Phaser.Scene {
         }
       });
 
+      this.room.state.npcs.onAdd((npc: any, id: string) => {
+        const sprite = this.add.sprite(npc.x, npc.y, "npc");
+        sprite.setScale(0.4);
+        this.npcs[id] = sprite;
+        this.add.text(npc.x - 40, npc.y - 60, `[${npc.name}]`, { fontSize: '18px', color: '#00ff00', fontStyle: 'bold' });
+      });
+
+      this.room.state.npcs.onRemove((npc: any, id: string) => {
+        if (this.npcs[id]) {
+          this.npcs[id].destroy();
+          delete this.npcs[id];
+        }
+      });
+
     } catch (e) {
       console.error("Join error:", e);
     }
@@ -210,6 +252,10 @@ class GameScene extends Phaser.Scene {
 
     if (Phaser.Input.Keyboard.JustDown(this.pickupKey)) {
         this.room.send("pickup");
+    }
+
+    if (Phaser.Input.Keyboard.JustDown(this.buyKey)) {
+        this.room.send("buy_heal");
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.skillKey)) {
