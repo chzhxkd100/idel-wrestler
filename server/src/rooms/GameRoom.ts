@@ -74,6 +74,24 @@ export class GameRoom extends Room<GameState> {
       }
     });
 
+    this.onMessage("accept_quest", (client) => {
+      const player = this.state.players.get(client.sessionId);
+      if (!player) return;
+
+      if (player.questStatus === 0) {
+          player.questStatus = 1;
+          player.questProgress = 0;
+          console.log(`${player.name} accepted the quest!`);
+      } else if (player.questStatus === 1 && player.questProgress >= 5) {
+          player.questStatus = 2;
+          const currentGold = player.inventory.get("gold") || 0;
+          player.inventory.set("gold", currentGold + 500);
+          player.exp += 500;
+          console.log(`${player.name} completed the quest!`);
+          this.broadcast("quest_complete", { targetId: player.id });
+      }
+    });
+
     this.onMessage("skill_cast", (client, data) => {
       const player = this.state.players.get(client.sessionId);
       if (!player || player.hp <= 0) return;
@@ -98,6 +116,12 @@ export class GameRoom extends Room<GameState> {
              if (monster.hp <= 0) {
                 monster.hp = 0;
                 player.exp += monster.expReward;
+                
+                // Quest progress
+                if (player.questStatus === 1 && !monster.isBoss) {
+                    player.questProgress++;
+                }
+
                 if (player.exp >= player.maxExp) {
                    player.level++;
                    player.exp = 0;
@@ -124,6 +148,36 @@ export class GameRoom extends Room<GameState> {
              }
           }
         });
+
+        // PvP AOE Damage
+        this.state.players.forEach((otherPlayer, id) => {
+           if (id !== player.id && otherPlayer.hp > 0) {
+               const dist = Math.sqrt(Math.pow(player.x - otherPlayer.x, 2) + Math.pow(player.y - otherPlayer.y, 2));
+               if (dist < 100) {
+                  otherPlayer.hp -= damage;
+                  this.broadcast("damage", { targetId: id, damage });
+                  
+                  if (otherPlayer.hp <= 0) {
+                      otherPlayer.hp = 0;
+                      this.broadcast("kill_log", { killer: player.name, victim: otherPlayer.name });
+                      
+                      // Drop some gold
+                      const droppedGold = Math.floor((otherPlayer.inventory.get("gold") || 0) * 0.2);
+                      if (droppedGold > 0) {
+                          otherPlayer.inventory.set("gold", (otherPlayer.inventory.get("gold") || 0) - droppedGold);
+                          const item = new Item(`item_pvp_${Date.now()}_${otherPlayer.id}`, "gold", droppedGold, otherPlayer.x, otherPlayer.y);
+                          this.state.items.set(item.id, item);
+                      }
+
+                      // Respawn
+                      otherPlayer.hp = otherPlayer.maxHp;
+                      otherPlayer.mp = otherPlayer.maxMp;
+                      otherPlayer.x = 400; // Respawn near NPC
+                      otherPlayer.y = 300;
+                  }
+               }
+           }
+        });
       }
     });
 
@@ -143,6 +197,12 @@ export class GameRoom extends Room<GameState> {
           
             if (data.isMonster) {
             attacker.exp += (target as Monster).expReward; 
+            
+            // Quest progress
+            if (attacker.questStatus === 1 && !(target as Monster).isBoss) {
+                attacker.questProgress++;
+            }
+
             if (attacker.exp >= attacker.maxExp) {
                attacker.level++;
                attacker.exp = 0;
@@ -171,6 +231,24 @@ export class GameRoom extends Room<GameState> {
             }
 
             this.state.monsters.delete(data.targetId);
+          } else {
+             // PvP Death
+             const deadPlayer = target as Player;
+             this.broadcast("kill_log", { killer: attacker.name, victim: deadPlayer.name });
+             
+             // Drop some gold
+             const droppedGold = Math.floor((deadPlayer.inventory.get("gold") || 0) * 0.2); // Drop 20%
+             if (droppedGold > 0) {
+                 deadPlayer.inventory.set("gold", (deadPlayer.inventory.get("gold") || 0) - droppedGold);
+                 const item = new Item(`item_pvp_${Date.now()}_${deadPlayer.id}`, "gold", droppedGold, deadPlayer.x, deadPlayer.y);
+                 this.state.items.set(item.id, item);
+             }
+
+             // Respawn
+             deadPlayer.hp = deadPlayer.maxHp;
+             deadPlayer.mp = deadPlayer.maxMp;
+             deadPlayer.x = 400; // Respawn near NPC
+             deadPlayer.y = 300;
           }
         }
       }

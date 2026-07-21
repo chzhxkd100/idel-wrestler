@@ -11,6 +11,24 @@ async function startBot() {
       const myPlayer = room.state.players.get(room.sessionId);
       if (!myPlayer) return;
 
+      // Handle Quests
+      if (myPlayer.questStatus === 0 || (myPlayer.questStatus === 1 && myPlayer.questProgress >= 5)) {
+          const shopNpc = room.state.npcs.get("npc_shop");
+          if (shopNpc) {
+              const dist = Math.sqrt(Math.pow(myPlayer.x - shopNpc.x, 2) + Math.pow(myPlayer.y - shopNpc.y, 2));
+              if (dist > 50) {
+                 const dx = shopNpc.x - myPlayer.x;
+                 const dy = shopNpc.y - myPlayer.y;
+                 room.send("move", { x: myPlayer.x + (dx/dist) * 10, y: myPlayer.y + (dy/dist) * 10 });
+                 return; // Focus on moving to NPC
+              } else {
+                 room.send("accept_quest");
+                 console.log("Bot interacted with Quest NPC!");
+                 return;
+              }
+          }
+      }
+
       // Allocate SP to STR
       if (myPlayer.sp > 0) {
           room.send("add_stat", { stat: "str" });

@@ -23,6 +23,8 @@ class GameScene extends Phaser.Scene {
   private myMpText!: Phaser.GameObjects.Text;
   private myGoldText!: Phaser.GameObjects.Text;
   private myStatsText!: Phaser.GameObjects.Text;
+  private myQuestText!: Phaser.GameObjects.Text;
+  private questKey!: Phaser.Input.Keyboard.Key;
 
   constructor() {
     super("GameScene");
@@ -51,13 +53,15 @@ class GameScene extends Phaser.Scene {
     this.statStrKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.ONE);
     this.statAgiKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.TWO);
     this.statVitKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.THREE);
+    this.questKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
 
     this.myLevelText = this.add.text(10, 10, "LVL: 1", { fontSize: '24px', color: '#fff' });
     this.myExpText = this.add.text(10, 40, "EXP: 0/100", { fontSize: '24px', color: '#fff' });
     this.myMpText = this.add.text(10, 70, "MP: 50/50", { fontSize: '24px', color: '#00ffff' });
     this.myGoldText = this.add.text(10, 100, "GOLD: 0", { fontSize: '24px', color: '#ffff00' });
     this.myStatsText = this.add.text(600, 10, "SP: 0\n1: STR 10\n2: AGI 10\n3: VIT 10", { fontSize: '20px', color: '#ffcc00', align: 'right' });
-    this.add.text(10, 550, "Z: Skill | Shift: Pickup | B: Buy Heal(50G)", { fontSize: '20px', color: '#fff' });
+    this.myQuestText = this.add.text(600, 120, "No Quest", { fontSize: '20px', color: '#ff00ff', align: 'right' });
+    this.add.text(10, 550, "Z: Skill | Shift: Pickup | B: Buy Heal(50G) | Q: Quest", { fontSize: '20px', color: '#fff' });
 
     try {
       this.room = await client.joinOrCreate("game");
@@ -121,6 +125,35 @@ class GameScene extends Phaser.Scene {
          }
       });
 
+      this.room.onMessage("kill_log", (message) => {
+         const { killer, victim } = message;
+         const logText = this.add.text(400, 200, `[${killer}] killed [${victim}]!`, { fontSize: '32px', color: '#ff0000', fontStyle: 'bold', backgroundColor: '#00000088' });
+         logText.setOrigin(0.5);
+         this.tweens.add({
+             targets: logText,
+             y: 100,
+             alpha: 0,
+             duration: 3000,
+             onComplete: () => logText.destroy()
+         });
+      });
+
+      this.room.onMessage("quest_complete", (message) => {
+         const { targetId } = message;
+         const playerSprite = this.players[targetId];
+         if (playerSprite) {
+             const effect = this.add.text(playerSprite.x, playerSprite.y - 80, "QUEST CLEAR!", { fontSize: '28px', color: '#ffff00', fontStyle: 'bold' });
+             effect.setOrigin(0.5);
+             this.tweens.add({
+                targets: effect,
+                y: playerSprite.y - 120,
+                alpha: 0,
+                duration: 2000,
+                onComplete: () => effect.destroy()
+             });
+         }
+      });
+
       this.room.onMessage("levelup", (message) => {
         const { playerId, level } = message;
         if (playerId === this.room.sessionId) {
@@ -175,6 +208,15 @@ class GameScene extends Phaser.Scene {
               this.myLevelText.setText(`LVL: ${player.level}`);
               this.myMpText.setText(`MP: ${Math.floor(player.mp)}/${player.maxMp}`);
               this.myStatsText.setText(`SP: ${player.sp}\n1: STR ${player.str}\n2: AGI ${player.agi}\n3: VIT ${player.vit}`);
+              
+              if (player.questStatus === 0) {
+                  this.myQuestText.setText("Quest: (Q at NPC)");
+              } else if (player.questStatus === 1) {
+                  this.myQuestText.setText(`Quest: Kill 5 Mobs (${player.questProgress}/5)`);
+              } else if (player.questStatus === 2) {
+                  this.myQuestText.setText("Quest: Completed!");
+              }
+
               if (player.inventory) {
                  const gold = player.inventory.gold || 0;
                  this.myGoldText.setText(`GOLD: ${gold}`);
@@ -256,7 +298,7 @@ class GameScene extends Phaser.Scene {
         const sprite = this.add.sprite(npc.x, npc.y, "npc");
         sprite.setScale(0.4);
         this.npcs[id] = sprite;
-        this.add.text(npc.x - 40, npc.y - 60, `[${npc.name}]`, { fontSize: '18px', color: '#00ff00', fontStyle: 'bold' });
+        this.add.text(npc.x - 40, npc.y - 60, `[${npc.name}]\n!`, { fontSize: '18px', color: '#00ff00', fontStyle: 'bold', align: 'center' });
       });
 
       this.room.state.npcs.onRemove((npc: any, id: string) => {
@@ -299,6 +341,20 @@ class GameScene extends Phaser.Scene {
 
     if (Phaser.Input.Keyboard.JustDown(this.buyKey)) {
         this.room.send("buy_heal");
+    }
+
+    if (Phaser.Input.Keyboard.JustDown(this.questKey)) {
+        // Only works if near NPC
+        if (this.npcs["npc_shop"]) {
+           const npc = this.npcs["npc_shop"];
+           const myPlayer = this.players[this.room.sessionId];
+           if (myPlayer) {
+               const dist = Math.sqrt(Math.pow(myPlayer.x - npc.x, 2) + Math.pow(myPlayer.y - npc.y, 2));
+               if (dist < 100) {
+                   this.room.send("accept_quest");
+               }
+           }
+        }
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.statStrKey)) {

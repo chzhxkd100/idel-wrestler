@@ -16,6 +16,8 @@ export interface IPlayerState {
   agi: number;
   vit: number;
   hasBelt: boolean;
+  questStatus: number;
+  questProgress: number;
 }
 
 export interface IMonsterState {

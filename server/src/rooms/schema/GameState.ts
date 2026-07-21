@@ -19,6 +19,8 @@ export class Player extends Schema implements IPlayerState {
   @type("number") agi: number;
   @type("number") vit: number;
   @type("boolean") hasBelt: boolean;
+  @type("number") questStatus: number;
+  @type("number") questProgress: number;
 
   constructor(id: string, name: string) {
     super();
@@ -38,6 +40,8 @@ export class Player extends Schema implements IPlayerState {
     this.agi = 10;
     this.vit = 10;
     this.hasBelt = false;
+    this.questStatus = 0;
+    this.questProgress = 0;
     this.inventory.set("gold", 0);
   }
 }
