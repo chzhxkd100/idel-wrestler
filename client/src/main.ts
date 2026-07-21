@@ -379,11 +379,18 @@ class GameScene extends Phaser.Scene {
               else if (player.level >= 10) title = "Master";
               
               const rebirthStr = player.rebirthCount > 0 ? `★${player.rebirthCount} ` : "";
+              const afkStr = player.isAFK ? "[Zzz] " : "";
               
               const updatedNameStr = player.guildName !== "None" 
-                 ? `${rebirthStr}[${player.guildName}] [${title}] [${player.jobClass}] ${player.name || "Wrestler"}`
-                 : `${rebirthStr}[${title}] [${player.jobClass}] ${player.name || "Wrestler"}`;
+                 ? `${afkStr}${rebirthStr}[${player.guildName}] [${title}] [${player.jobClass}] ${player.name || "Wrestler"}`
+                 : `${afkStr}${rebirthStr}[${title}] [${player.jobClass}] ${player.name || "Wrestler"}`;
               this.uiTexts[sessionId + "_name"].setText(updatedNameStr);
+              
+              if (player.isAFK) {
+                  this.uiTexts[sessionId + "_name"].setColor('#888888');
+              } else {
+                  this.uiTexts[sessionId + "_name"].setColor('#ffffff');
+              }
           }
           
           if (player.hasBelt && !beltIcon) {

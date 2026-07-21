@@ -28,6 +28,8 @@ export class Player extends Schema implements IPlayerState {
   @type("boolean") hasWeapon: boolean;
   @type("number") rebirthCount: number;
   @type("boolean") hasPet: boolean;
+  @type("boolean") isAFK: boolean;
+  lastMoveTime: number = Date.now();
 
   constructor(id: string, name: string) {
     super();
@@ -56,6 +58,7 @@ export class Player extends Schema implements IPlayerState {
     this.hasWeapon = false;
     this.rebirthCount = 0;
     this.hasPet = false;
+    this.isAFK = false;
     this.inventory.set("gold", 0);
   }
 }

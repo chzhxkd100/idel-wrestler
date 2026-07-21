@@ -25,6 +25,7 @@ export interface IPlayerState {
   hasWeapon: boolean;
   rebirthCount: number;
   hasPet: boolean;
+  isAFK: boolean;
 }
 
 export interface IMonsterState {

@@ -19,6 +19,8 @@ export class GameRoom extends Room<GameState> {
       if (player && player.hp > 0) {
         player.x = data.x;
         player.y = data.y;
+        player.lastMoveTime = Date.now();
+        if (player.isAFK) player.isAFK = false;
       }
     });
 
@@ -260,6 +262,11 @@ export class GameRoom extends Room<GameState> {
                       otherPlayer.hp = 0;
                       this.broadcast("kill_log", { killer: player.name, victim: otherPlayer.name });
                       
+                      // EXP Penalty
+                      const expLoss = Math.floor(otherPlayer.exp * 0.1);
+                      otherPlayer.exp = Math.max(0, otherPlayer.exp - expLoss);
+                      this.broadcast("chat_message", { targetId: otherPlayer.id, message: `[System] You lost ${expLoss} EXP (10%) due to death.` });
+
                       // Drop some gold
                       const droppedGold = Math.floor((otherPlayer.inventory.get("gold") || 0) * 0.2);
                       if (droppedGold > 0) {
@@ -422,6 +429,11 @@ export class GameRoom extends Room<GameState> {
                  console.log(`${deadPlayer.name} was defeated by ${attacker.name}!`);
                  this.broadcast("kill_log", { killer: attacker.name, victim: deadPlayer.name });
                  
+                 // EXP Penalty
+                 const expLoss = Math.floor(deadPlayer.exp * 0.1);
+                 deadPlayer.exp = Math.max(0, deadPlayer.exp - expLoss);
+                 this.broadcast("chat_message", { targetId: deadPlayer.id, message: `[System] You lost ${expLoss} EXP (10%) due to death.` });
+                 
                  // Drop some gold
                  const droppedGold = Math.floor((deadPlayer.inventory.get("gold") || 0) * 0.2); // Drop 20%
                  if (droppedGold > 0) {
@@ -516,6 +528,11 @@ export class GameRoom extends Room<GameState> {
            player.hp = Math.min(player.maxHp, player.hp + 5);
            player.mp = Math.min(player.maxMp, player.mp + 5);
        }
+       
+       // AFK Check
+       if (!player.isAFK && Date.now() - player.lastMoveTime > 60000) {
+           player.isAFK = true;
+       }
     });
 
     // Respawn Monsters and Bosses
@@ -581,6 +598,12 @@ export class GameRoom extends Room<GameState> {
                  this.broadcast("damage", { targetId: nearestPlayer.id, damage: dmg });
                  if (nearestPlayer.hp <= 0) {
                    nearestPlayer.hp = 0;
+                   
+                   // EXP Penalty
+                   const expLoss = Math.floor(nearestPlayer.exp * 0.1);
+                   nearestPlayer.exp = Math.max(0, nearestPlayer.exp - expLoss);
+                   this.broadcast("chat_message", { targetId: nearestPlayer.id, message: `[System] You lost ${expLoss} EXP (10%) due to death.` });
+                   
                    nearestPlayer.hp = nearestPlayer.maxHp;
                    nearestPlayer.mp = nearestPlayer.maxMp;
                    nearestPlayer.x = 400; // Respawn near NPC
