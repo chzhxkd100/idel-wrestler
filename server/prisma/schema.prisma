@@ -7,25 +7,27 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(uuid())
-  username  String    @unique
-  password  String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  player    Player?
-}
+  id            String   @id @default(cuid())
+  username      String   @unique
+  password      String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  level         Int      @default(1)
+  exp           Int      @default(0)
+  hp            Int      @default(100)
+  maxHp         Int      @default(100)
+  mp            Int      @default(50)
+  maxMp         Int      @default(50)
+  gold          Int      @default(0)
+  
+  sp            Int      @default(0)
+  str           Int      @default(10)
+  agi           Int      @default(10)
+  vit           Int      @default(10)
+  
+  hasBelt       Boolean  @default(false)
+  questStatus   Int      @default(0)
+  questProgress Int      @default(0)
 
-model Player {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id])
-  name      String
-  level     Int      @default(1)
-  exp       Int      @default(0)
-  x         Float    @default(0)
-  y         Float    @default(0)
-  hp        Int      @default(100)
-  maxHp     Int      @default(100)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }

@@ -5,6 +5,7 @@ const client = new Colyseus.Client("ws://localhost:2567");
 
 class GameScene extends Phaser.Scene {
   private room!: Colyseus.Room;
+  private myUsername!: string;
   private players: { [id: string]: Phaser.GameObjects.Sprite } = {};
   private monsters: { [id: string]: Phaser.GameObjects.Sprite } = {};
   private npcs: { [id: string]: Phaser.GameObjects.Sprite } = {};
@@ -67,7 +68,8 @@ class GameScene extends Phaser.Scene {
     this.add.text(10, 550, "Z: Skill | Shift: Pickup | B: Buy Heal(50G) | Q: Quest", { fontSize: '20px', color: '#fff' });
 
     try {
-      this.room = await client.joinOrCreate("game");
+      this.myUsername = (window as any).GAME_USERNAME || "Guest";
+      this.room = await client.joinOrCreate("game", { username: this.myUsername });
       console.log("Joined room:", this.room.roomId);
 
       this.room.onMessage("damage", (message) => {
@@ -480,4 +482,21 @@ const config: Phaser.Types.Core.GameConfig = {
   }
 };
 
-new Phaser.Game(config);
+window.onload = () => {
+    const loginBtn = document.getElementById("loginBtn");
+    const usernameInput = document.getElementById("usernameInput") as HTMLInputElement;
+    const loginScreen = document.getElementById("login-screen");
+    const gameContainer = document.getElementById("game-container");
+
+    if (loginBtn && usernameInput && loginScreen && gameContainer) {
+        loginBtn.addEventListener("click", () => {
+            const username = usernameInput.value.trim() || "Guest_" + Math.floor(Math.random() * 1000);
+            (window as any).GAME_USERNAME = username;
+            
+            loginScreen.style.display = "none";
+            gameContainer.style.display = "block";
+            
+            new Phaser.Game(config);
+        });
+    }
+};

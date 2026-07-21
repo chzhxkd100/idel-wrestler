@@ -23,7 +23,14 @@
     </style>
   </head>
   <body>
-    <div id="game-container"></div>
+  <div id="login-screen" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000;">
+     <h1 style="color: #fff; font-family: sans-serif;">Raising a Wrestler</h1>
+     <input type="text" id="usernameInput" placeholder="Enter your Nickname" style="padding: 10px; font-size: 20px; width: 300px; text-align: center; margin-bottom: 20px;">
+     <button id="loginBtn" style="padding: 10px 40px; font-size: 24px; cursor: pointer; background: #ffcc00; border: none; border-radius: 5px; font-weight: bold;">Start Game</button>
+  </div>
+  
+  <div id="game-container" style="display: none;"></div>
+  
   <div id="chat-overlay" style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100; display: none;">
      <input type="text" id="chatInput" style="padding: 10px; width: 300px; font-size: 16px; border: 2px solid #ccc; border-radius: 5px; background: rgba(0,0,0,0.8); color: white;" placeholder="Press Enter to send..." autocomplete="off">
   </div>

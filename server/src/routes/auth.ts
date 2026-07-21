@@ -23,12 +23,7 @@ authRouter.post("/register", async (req, res) => {
     const user = await prisma.user.create({
       data: {
         username,
-        password: hashedPassword,
-        player: {
-          create: {
-            name: username,
-          }
-        }
+        password: hashedPassword
       }
     });
 

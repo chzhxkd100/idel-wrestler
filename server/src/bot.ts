@@ -4,7 +4,9 @@ const client = new Client("ws://localhost:2567");
 
 async function startBot() {
   try {
-    const room = await client.joinOrCreate("game", { userId: "dummy_bot" });
+    const botName = "Bot_" + Math.floor(Math.random() * 1000);
+    const room = await client.joinOrCreate("game", { username: botName });
+    console.log(`${botName} joined successfully!`);
     console.log("Bot joined room:", room.roomId);
 
     setInterval(() => {

@@ -1,6 +1,8 @@
 import { Room, Client } from "@colyseus/core";
 import { GameState, Player, Monster, Item, Npc } from "./schema/GameState";
-import { prisma } from "../db";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 export class GameRoom extends Room<GameState> {
   maxClients = 100;
@@ -360,26 +362,65 @@ export class GameRoom extends Room<GameState> {
 
   async onJoin(client: Client, options: any) {
     console.log(client.sessionId, "joined!");
-    const { userId } = options;
     
-    let playerName = "Guest";
-    if (userId) {
-      try {
-        const dbPlayer = await prisma.player.findUnique({ where: { userId } });
-        if (dbPlayer) {
-          playerName = dbPlayer.name;
-        }
-      } catch (e) {
-        console.error("DB load error:", e);
-      }
+    const username = options.username || "Guest_" + client.sessionId;
+    
+    // Fetch or create user in DB
+    let dbUser = await prisma.user.findUnique({ where: { username } });
+    if (!dbUser) {
+        dbUser = await prisma.user.create({
+            data: { username, password: "dummy_password" }
+        });
     }
 
-    const player = new Player(client.sessionId, playerName);
+    const player = new Player(client.sessionId, username);
+    player.x = 400;
+    player.y = 300;
+    
+    // Load state from DB
+    player.level = dbUser.level;
+    player.exp = dbUser.exp;
+    player.hp = dbUser.hp;
+    player.maxHp = dbUser.maxHp;
+    player.mp = dbUser.mp;
+    player.maxMp = dbUser.maxMp;
+    player.sp = dbUser.sp;
+    player.str = dbUser.str;
+    player.agi = dbUser.agi;
+    player.vit = dbUser.vit;
+    player.hasBelt = dbUser.hasBelt;
+    player.questStatus = dbUser.questStatus;
+    player.questProgress = dbUser.questProgress;
+    player.inventory.set("gold", dbUser.gold);
+
     this.state.players.set(client.sessionId, player);
   }
 
-  onLeave(client: Client, consented: boolean) {
+  async onLeave(client: Client, consented: boolean) {
     console.log(client.sessionId, "left!");
+    const player = this.state.players.get(client.sessionId);
+    if (player) {
+       // Save to DB
+       await prisma.user.update({
+           where: { username: player.name },
+           data: {
+               level: player.level,
+               exp: player.exp,
+               hp: player.hp,
+               maxHp: player.maxHp,
+               mp: player.mp,
+               maxMp: player.maxMp,
+               gold: player.inventory.get("gold") || 0,
+               sp: player.sp,
+               str: player.str,
+               agi: player.agi,
+               vit: player.vit,
+               hasBelt: player.hasBelt,
+               questStatus: player.questStatus,
+               questProgress: player.questProgress
+           }
+       });
+    }
     this.state.players.delete(client.sessionId);
   }
 
