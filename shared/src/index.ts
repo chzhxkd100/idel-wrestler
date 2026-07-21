@@ -19,6 +19,8 @@ export interface IPlayerState {
   questStatus: number;
   questProgress: number;
   jobClass: string;
+  guildName: string;
+  invincibleUntil: number;
 }
 
 export interface IMonsterState {

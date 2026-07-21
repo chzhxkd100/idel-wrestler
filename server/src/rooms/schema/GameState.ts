@@ -22,6 +22,8 @@ export class Player extends Schema implements IPlayerState {
   @type("number") questStatus: number;
   @type("number") questProgress: number;
   @type("string") jobClass: string;
+  @type("string") guildName: string;
+  @type("number") invincibleUntil: number;
 
   constructor(id: string, name: string) {
     super();
@@ -44,6 +46,8 @@ export class Player extends Schema implements IPlayerState {
     this.questStatus = 0;
     this.questProgress = 0;
     this.jobClass = "Novice";
+    this.guildName = "None";
+    this.invincibleUntil = 0;
     this.inventory.set("gold", 0);
   }
 }

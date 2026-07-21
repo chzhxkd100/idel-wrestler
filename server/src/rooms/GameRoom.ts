@@ -94,11 +94,23 @@ export class GameRoom extends Room<GameState> {
       }
     });
 
-    this.onMessage("chat", (client, data) => {
+    this.onMessage("chat", async (client, data) => {
       const player = this.state.players.get(client.sessionId);
       if (!player) return;
-      this.broadcast("chat_message", { targetId: player.id, message: data.message });
-      console.log(`[Chat] ${player.name}: ${data.message}`);
+      
+      const msg: string = data.message;
+      if (msg.startsWith("/guild ")) {
+          const parts = msg.split(" ");
+          if (parts.length >= 2) {
+             const guildName = parts.slice(1).join(" ");
+             player.guildName = guildName;
+             this.broadcast("chat_message", { targetId: player.id, message: `Joined guild [${guildName}]!` });
+             return;
+          }
+      }
+
+      this.broadcast("chat_message", { targetId: player.id, message: msg });
+      console.log(`[Chat] ${player.name}: ${msg}`);
     });
 
     this.onMessage("change_job", (client, data) => {
@@ -182,8 +194,17 @@ export class GameRoom extends Room<GameState> {
         // PvP AOE Damage
         this.state.players.forEach((otherPlayer, id) => {
            if (id !== player.id && otherPlayer.hp > 0) {
+               // Friendly Fire check
+               if (player.guildName !== "None" && player.guildName === otherPlayer.guildName) return;
+               
                const dist = Math.sqrt(Math.pow(player.x - otherPlayer.x, 2) + Math.pow(player.y - otherPlayer.y, 2));
                if (dist < 100) {
+                  // Invincibility check
+                  if (otherPlayer.invincibleUntil > Date.now()) {
+                      this.broadcast("chat_message", { targetId: id, message: "IMMUNE" });
+                      return;
+                  }
+
                   otherPlayer.hp -= damage;
                   this.broadcast("damage", { targetId: id, damage });
                   
@@ -204,6 +225,7 @@ export class GameRoom extends Room<GameState> {
                       otherPlayer.mp = otherPlayer.maxMp;
                       otherPlayer.x = 400; // Respawn near NPC
                       otherPlayer.y = 300;
+                      otherPlayer.invincibleUntil = Date.now() + 3000;
                   }
                }
            }
@@ -217,80 +239,90 @@ export class GameRoom extends Room<GameState> {
       
       if (attacker && target) {
           const damage = data.isMonster ? attacker.str + (attacker.hasBelt ? 20 : 0) : ((target as any).damage || 10);
-          target.hp -= damage;
           
-          this.broadcast("damage", { targetId: data.targetId, damage });
+          if (data.isMonster) {
+              target.hp -= damage;
+              this.broadcast("damage", { targetId: data.targetId, damage });
 
-          if (target.hp <= 0) {
-          target.hp = 0;
-          console.log(`${(target as any).name || (target as any).type} was defeated by ${attacker.name}!`);
-          
-            if (data.isMonster) {
-            attacker.exp += (target as Monster).expReward; 
-            
-            // Quest progress
-            if (attacker.questStatus === 1 && !(target as Monster).isBoss) {
-                attacker.questProgress++;
-            }
+              if (target.hp <= 0) {
+                  target.hp = 0;
+                  console.log(`${(target as any).type || "Monster"} was defeated by ${attacker.name}!`);
+                  attacker.exp += (target as Monster).expReward; 
+                  
+                  if (attacker.questStatus === 1 && !(target as Monster).isBoss) {
+                      attacker.questProgress++;
+                  }
 
-            if (attacker.exp >= attacker.maxExp) {
-               attacker.level++;
-               attacker.exp = 0;
-               attacker.maxExp = Math.floor(attacker.maxExp * 1.5);
-               attacker.maxHp += 20;
-               attacker.hp = attacker.maxHp;
-               attacker.maxMp += 10;
-               attacker.mp = attacker.maxMp;
-               attacker.sp += 5;
+                  if (attacker.exp >= attacker.maxExp) {
+                     attacker.level++;
+                     attacker.exp = 0;
+                     attacker.maxExp = Math.floor(attacker.maxExp * 1.5);
+                     attacker.maxHp += 20;
+                     attacker.hp = attacker.maxHp;
+                     attacker.maxMp += 10;
+                     attacker.mp = attacker.maxMp;
+                     attacker.sp += 5;
 
-               // Job Bonus
-               if (attacker.jobClass === "Fighter") {
-                   attacker.str += 2;
-               } else if (attacker.jobClass === "Grappler") {
-                   attacker.vit += 2;
-                   attacker.maxHp += 20;
-                   attacker.hp += 20;
-               }
+                     if (attacker.jobClass === "Fighter") {
+                         attacker.str += 2;
+                     } else if (attacker.jobClass === "Grappler") {
+                         attacker.vit += 2;
+                         attacker.maxHp += 20;
+                         attacker.hp += 20;
+                     }
 
-               this.broadcast("levelup", { playerId: attacker.id, level: attacker.level });
-            }
+                     this.broadcast("levelup", { playerId: attacker.id, level: attacker.level });
+                  }
 
-            // Drop Item
-            let isTargetBoss = false;
-            if (target instanceof Monster) {
-               isTargetBoss = target.isBoss;
-            }
+                  let isTargetBoss = (target as Monster).isBoss;
+                  if (isTargetBoss && Math.random() < 0.2) {
+                     const belt = new Item(`item_belt_${Date.now()}_${data.targetId}`, "belt", 1, target.x, target.y);
+                     this.state.items.set(belt.id, belt);
+                  } else if (isTargetBoss || Math.random() < 0.5) { 
+                    const dropAmount = isTargetBoss ? Math.floor(Math.random() * 200) + 100 : Math.floor(Math.random() * 50) + 10;
+                    const item = new Item(`item_${Date.now()}_${data.targetId}`, "gold", dropAmount, target.x, target.y);
+                    this.state.items.set(item.id, item);
+                  }
 
-            if (isTargetBoss && Math.random() < 0.2) {
-               const belt = new Item(`item_belt_${Date.now()}_${data.targetId}`, "belt", 1, target.x, target.y);
-               this.state.items.set(belt.id, belt);
-            } else if (isTargetBoss || Math.random() < 0.5) { 
-              const dropAmount = isTargetBoss ? Math.floor(Math.random() * 200) + 100 : Math.floor(Math.random() * 50) + 10;
-              const item = new Item(`item_${Date.now()}_${data.targetId}`, "gold", dropAmount, target.x, target.y);
-              this.state.items.set(item.id, item);
-            }
-
-            this.state.monsters.delete(data.targetId);
+                  this.state.monsters.delete(data.targetId);
+              }
           } else {
              // PvP Death
              const deadPlayer = target as Player;
-             this.broadcast("kill_log", { killer: attacker.name, victim: deadPlayer.name });
              
-             // Drop some gold
-             const droppedGold = Math.floor((deadPlayer.inventory.get("gold") || 0) * 0.2); // Drop 20%
-             if (droppedGold > 0) {
-                 deadPlayer.inventory.set("gold", (deadPlayer.inventory.get("gold") || 0) - droppedGold);
-                 const item = new Item(`item_pvp_${Date.now()}_${deadPlayer.id}`, "gold", droppedGold, deadPlayer.x, deadPlayer.y);
-                 this.state.items.set(item.id, item);
+             // Friendly Fire Check
+             if (attacker.guildName !== "None" && attacker.guildName === deadPlayer.guildName) return;
+
+             // Invincibility check
+             if (deadPlayer.invincibleUntil > Date.now()) {
+                 this.broadcast("chat_message", { targetId: data.targetId, message: "IMMUNE" });
+                 return;
              }
 
-             // Respawn
-             deadPlayer.hp = deadPlayer.maxHp;
-             deadPlayer.mp = deadPlayer.maxMp;
-             deadPlayer.x = 400; // Respawn near NPC
-             deadPlayer.y = 300;
+             deadPlayer.hp -= damage;
+             this.broadcast("damage", { targetId: data.targetId, damage });
+
+             if (deadPlayer.hp <= 0) {
+                 deadPlayer.hp = 0;
+                 console.log(`${deadPlayer.name} was defeated by ${attacker.name}!`);
+                 this.broadcast("kill_log", { killer: attacker.name, victim: deadPlayer.name });
+                 
+                 // Drop some gold
+                 const droppedGold = Math.floor((deadPlayer.inventory.get("gold") || 0) * 0.2); // Drop 20%
+                 if (droppedGold > 0) {
+                     deadPlayer.inventory.set("gold", (deadPlayer.inventory.get("gold") || 0) - droppedGold);
+                     const item = new Item(`item_pvp_${Date.now()}_${deadPlayer.id}`, "gold", droppedGold, deadPlayer.x, deadPlayer.y);
+                     this.state.items.set(item.id, item);
+                 }
+
+                 // Respawn
+                 deadPlayer.hp = deadPlayer.maxHp;
+                 deadPlayer.mp = deadPlayer.maxMp;
+                 deadPlayer.x = 400; // Respawn near NPC
+                 deadPlayer.y = 300;
+                 deadPlayer.invincibleUntil = Date.now() + 3000;
+             }
           }
-        }
       }
     });
 
@@ -374,10 +406,19 @@ export class GameRoom extends Room<GameState> {
         } else {
            // Attack player (simple cooldown mechanism could be added)
            if (Math.random() < 0.05) { // 5% chance per tick to hit
-             nearestPlayer.hp -= monster.damage;
-             this.broadcast("damage", { targetId: nearestPlayer.id, damage: monster.damage });
-             if (nearestPlayer.hp <= 0) {
-               nearestPlayer.hp = 0;
+             if (nearestPlayer.invincibleUntil > Date.now()) {
+                 // IMMUNE
+             } else {
+                 nearestPlayer.hp -= monster.damage;
+                 this.broadcast("damage", { targetId: nearestPlayer.id, damage: monster.damage });
+                 if (nearestPlayer.hp <= 0) {
+                   nearestPlayer.hp = 0;
+                   nearestPlayer.hp = nearestPlayer.maxHp;
+                   nearestPlayer.mp = nearestPlayer.maxMp;
+                   nearestPlayer.x = 400; // Respawn near NPC
+                   nearestPlayer.y = 300;
+                   nearestPlayer.invincibleUntil = Date.now() + 3000;
+                 }
              }
            }
         }
@@ -423,6 +464,7 @@ export class GameRoom extends Room<GameState> {
     player.questStatus = dbUser.questStatus;
     player.questProgress = dbUser.questProgress;
     player.jobClass = dbUser.jobClass;
+    player.guildName = dbUser.guildName;
     player.inventory.set("gold", dbUser.gold);
 
     this.state.players.set(client.sessionId, player);
@@ -450,7 +492,8 @@ export class GameRoom extends Room<GameState> {
                hasBelt: player.hasBelt,
                questStatus: player.questStatus,
                questProgress: player.questProgress,
-               jobClass: player.jobClass
+               jobClass: player.jobClass,
+               guildName: player.guildName
            }
        });
     }

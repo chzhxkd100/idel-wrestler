@@ -208,7 +208,9 @@ class GameScene extends Phaser.Scene {
         hpText.setOrigin(0.5);
         this.uiTexts[sessionId] = hpText;
 
-        const nameStr = `[${player.jobClass}] ${player.name || "Wrestler"}`;
+        const nameStr = player.guildName !== "None" 
+            ? `[${player.guildName}] [${player.jobClass}] ${player.name || "Wrestler"}`
+            : `[${player.jobClass}] ${player.name || "Wrestler"}`;
         const nameText = this.add.text(player.x, player.y - 70, nameStr, { fontSize: '14px', color: '#fff', fontStyle: 'bold' });
         nameText.setOrigin(0.5);
         this.uiTexts[sessionId + "_name"] = nameText;
@@ -224,6 +226,12 @@ class GameScene extends Phaser.Scene {
           sprite.x = player.x;
           sprite.y = player.y;
           
+          if (player.invincibleUntil > Date.now()) {
+              sprite.alpha = 0.5; // blinking effect could be added, just translucent for now
+          } else {
+              sprite.alpha = 1.0;
+          }
+
           if (this.uiTexts[sessionId]) {
               this.uiTexts[sessionId].x = player.x;
               this.uiTexts[sessionId].y = player.y - 40;
@@ -232,7 +240,10 @@ class GameScene extends Phaser.Scene {
           if (this.uiTexts[sessionId + "_name"]) {
               this.uiTexts[sessionId + "_name"].x = player.x;
               this.uiTexts[sessionId + "_name"].y = player.y - 70;
-              this.uiTexts[sessionId + "_name"].setText(`[${player.jobClass}] ${player.name || "Wrestler"}`);
+              const updatedNameStr = player.guildName !== "None" 
+                 ? `[${player.guildName}] [${player.jobClass}] ${player.name || "Wrestler"}`
+                 : `[${player.jobClass}] ${player.name || "Wrestler"}`;
+              this.uiTexts[sessionId + "_name"].setText(updatedNameStr);
           }
           
           if (player.hasBelt && !beltIcon) {
