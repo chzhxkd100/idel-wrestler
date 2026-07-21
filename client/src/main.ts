@@ -35,6 +35,8 @@ class GameScene extends Phaser.Scene {
   private isChatting: boolean = false;
   private minimapGraphics!: Phaser.GameObjects.Graphics;
   private bgImage!: Phaser.GameObjects.Image;
+  private hotTimeText!: Phaser.GameObjects.Text;
+  private auras: { [id: string]: Phaser.GameObjects.Particles.ParticleEmitter } = {};
 
   constructor() {
     super("GameScene");
@@ -241,6 +243,15 @@ class GameScene extends Phaser.Scene {
                      this.tweens.add({ targets: effect, alpha: 0, duration: 3000, onComplete: () => effect.destroy() });
                  }
              }
+             if (change.field === "isHotTime") {
+                 if (change.value) {
+                     this.hotTimeText = this.add.text(400, 50, "🔥 HOT TIME 2X EXP 🔥", { fontSize: '32px', color: '#ff0000', fontStyle: 'bold' });
+                     this.hotTimeText.setOrigin(0.5);
+                     this.tweens.add({ targets: this.hotTimeText, scale: 1.2, yoyo: true, repeat: -1, duration: 500 });
+                 } else {
+                     if (this.hotTimeText) this.hotTimeText.destroy();
+                 }
+             }
          });
       });
 
@@ -336,6 +347,19 @@ class GameScene extends Phaser.Scene {
               weaponIcon.y = player.y - 30;
           }
 
+          if (player.rebirthCount > 0) {
+              if (!this.auras[sessionId]) {
+                  this.auras[sessionId] = this.add.particles(player.x, player.y + 20, 'skill', {
+                      speed: 30,
+                      scale: { start: 0.1, end: 0 },
+                      blendMode: 'ADD',
+                      tint: player.rebirthCount >= 5 ? 0xff00ff : 0xffff00
+                  });
+              } else {
+                  this.auras[sessionId].setPosition(player.x, player.y + 20);
+              }
+          }
+
           if (sessionId === this.room.sessionId) {
               this.myExpText.setText(`EXP: ${player.exp}/${player.maxExp}`);
               this.myLevelText.setText(`LVL: ${player.level}`);
@@ -374,6 +398,10 @@ class GameScene extends Phaser.Scene {
         if (this.uiTexts[sessionId]) {
           this.uiTexts[sessionId].destroy();
           delete this.uiTexts[sessionId];
+        }
+        if (this.auras[sessionId]) {
+          this.auras[sessionId].destroy();
+          delete this.auras[sessionId];
         }
         this.updateLeaderboard();
       });

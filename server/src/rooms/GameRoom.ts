@@ -8,6 +8,7 @@ export class GameRoom extends Room<GameState> {
   maxClients = 100;
   private gameLoop: any;
   private dayNightTimer: number = 0;
+  private hotTimeTimer: number = 0;
 
   onCreate(options: any) {
     this.setState(new GameState());
@@ -320,7 +321,9 @@ export class GameRoom extends Room<GameState> {
               if (target.hp <= 0) {
                   target.hp = 0;
                   console.log(`${(target as any).type || "Monster"} was defeated by ${attacker.name}!`);
-                  attacker.exp += (target as Monster).expReward; 
+                  
+                  const expMultiplier = this.state.isHotTime ? 2 : 1;
+                  attacker.exp += (target as Monster).expReward * expMultiplier; 
                   
                   if (attacker.questStatus === 1 && !(target as Monster).isBoss) {
                       attacker.questProgress++;
@@ -438,6 +441,18 @@ export class GameRoom extends Room<GameState> {
             const wb = new Monster(`world_boss_${Date.now()}`, true, true);
             this.state.monsters.set(wb.id, wb);
             this.broadcast("chat_message", { targetId: "SYSTEM", message: "THE WORLD BOSS HAS AWAKENED!" });
+        }
+    }
+
+    // Hot Time Cycle
+    this.hotTimeTimer += deltaTime;
+    if (this.hotTimeTimer >= 120000) { // 120 seconds
+        this.hotTimeTimer -= 120000;
+        this.state.isHotTime = !this.state.isHotTime;
+        if (this.state.isHotTime) {
+            this.broadcast("chat_message", { targetId: "SYSTEM", message: "🔥 HOT TIME STARTED! 2X EXP! 🔥" });
+        } else {
+            this.broadcast("chat_message", { targetId: "SYSTEM", message: "HOT TIME ENDED." });
         }
     }
 

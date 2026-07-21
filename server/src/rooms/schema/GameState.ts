@@ -141,4 +141,5 @@ export class GameState extends Schema {
   @type({ map: Item }) items = new MapSchema<Item>();
   @type({ map: Npc }) npcs = new MapSchema<Npc>();
   @type("boolean") isNight: boolean = false;
+  @type("boolean") isHotTime: boolean = false;
 }

@@ -43,6 +43,7 @@ export interface IGameState {
   items: Map<string, IItemState>;
   npcs: Map<string, INpcState>;
   isNight: boolean;
+  isHotTime: boolean;
 }
 
 export interface IItemState {
