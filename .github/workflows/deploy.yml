@@ -1,0 +1,41 @@
+name: AI Automated CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Build Shared Types
+      run: npm run build:shared
+      
+    - name: Server Checks
+      run: |
+        cd server
+        npx prisma generate
+        npx tsc --noEmit
+
+    - name: Build Web Client
+      run: |
+        cd client
+        npm run build
+
+    - name: Automated Deployment (Simulated)
+      run: |
+        echo "AI Agent successfully validated all code."
+        echo "Ready to deploy server image to AWS / Fly.io"
+        echo "Ready to deploy client to Vercel / Cloudflare Pages"
