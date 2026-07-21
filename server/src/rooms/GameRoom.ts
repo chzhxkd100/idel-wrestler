@@ -119,6 +119,28 @@ export class GameRoom extends Room<GameState> {
           this.broadcast("chat_message", { targetId: player.id, message: `[System] You have ${status}!` });
           return;
       }
+      if (msg.trim() === "/rebirth") {
+          if (player.level >= 50) {
+              player.rebirthCount += 1;
+              player.level = 1;
+              player.exp = 0;
+              player.maxExp = 100;
+              player.sp = 0;
+              const bonus = player.rebirthCount * 10;
+              player.str = 10 + bonus;
+              player.agi = 10 + bonus;
+              player.vit = 10 + bonus;
+              player.maxHp = 100 + (player.vit * 10);
+              player.maxMp = 50 + (player.str * 5);
+              player.hp = player.maxHp;
+              player.mp = player.maxMp;
+              
+              this.broadcast("chat_message", { targetId: "SYSTEM", message: `[REBIRTH] ${player.name} has transcended! (Rebirth Count: ${player.rebirthCount})` });
+          } else {
+              this.broadcast("chat_message", { targetId: player.id, message: `[System] You must be Level 50 to rebirth.` });
+          }
+          return;
+      }
 
       this.broadcast("chat_message", { targetId: player.id, message: msg });
       console.log(`[Chat] ${player.name}: ${msg}`);
@@ -541,6 +563,7 @@ export class GameRoom extends Room<GameState> {
     player.jobClass = dbUser.jobClass;
     player.guildName = dbUser.guildName;
     player.hasWeapon = dbUser.hasWeapon;
+    player.rebirthCount = dbUser.rebirthCount;
     player.inventory.set("gold", dbUser.gold);
 
     this.state.players.set(client.sessionId, player);
@@ -570,7 +593,8 @@ export class GameRoom extends Room<GameState> {
                questProgress: player.questProgress,
                jobClass: player.jobClass,
                guildName: player.guildName,
-               hasWeapon: player.hasWeapon
+               hasWeapon: player.hasWeapon,
+               rebirthCount: player.rebirthCount
            }
        });
     }

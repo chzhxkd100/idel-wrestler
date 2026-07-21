@@ -23,6 +23,7 @@ export interface IPlayerState {
   invincibleUntil: number;
   isMounted: boolean;
   hasWeapon: boolean;
+  rebirthCount: number;
 }
 
 export interface IMonsterState {

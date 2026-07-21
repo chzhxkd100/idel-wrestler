@@ -299,9 +299,19 @@ class GameScene extends Phaser.Scene {
           if (this.uiTexts[sessionId + "_name"]) {
               this.uiTexts[sessionId + "_name"].x = player.x;
               this.uiTexts[sessionId + "_name"].y = player.y - 70;
+              
+              let title = "Rookie";
+              if (player.level >= 50) title = "God";
+              else if (player.level >= 40) title = "Mythic";
+              else if (player.level >= 30) title = "Legend";
+              else if (player.level >= 20) title = "Grandmaster";
+              else if (player.level >= 10) title = "Master";
+              
+              const rebirthStr = player.rebirthCount > 0 ? `★${player.rebirthCount} ` : "";
+              
               const updatedNameStr = player.guildName !== "None" 
-                 ? `[${player.guildName}] [${player.jobClass}] ${player.name || "Wrestler"}`
-                 : `[${player.jobClass}] ${player.name || "Wrestler"}`;
+                 ? `${rebirthStr}[${player.guildName}] [${title}] [${player.jobClass}] ${player.name || "Wrestler"}`
+                 : `${rebirthStr}[${title}] [${player.jobClass}] ${player.name || "Wrestler"}`;
               this.uiTexts[sessionId + "_name"].setText(updatedNameStr);
           }
           

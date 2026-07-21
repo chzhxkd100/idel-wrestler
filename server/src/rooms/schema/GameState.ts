@@ -26,6 +26,7 @@ export class Player extends Schema implements IPlayerState {
   @type("number") invincibleUntil: number;
   @type("boolean") isMounted: boolean;
   @type("boolean") hasWeapon: boolean;
+  @type("number") rebirthCount: number;
 
   constructor(id: string, name: string) {
     super();
@@ -52,6 +53,7 @@ export class Player extends Schema implements IPlayerState {
     this.invincibleUntil = 0;
     this.isMounted = false;
     this.hasWeapon = false;
+    this.rebirthCount = 0;
     this.inventory.set("gold", 0);
   }
 }

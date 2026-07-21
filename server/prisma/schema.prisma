@@ -32,4 +32,5 @@ model User {
   jobClass      String   @default("Novice")
   guildName     String   @default("None")
   hasWeapon     Boolean  @default(false)
+  rebirthCount  Int      @default(0)
 }
