@@ -32,6 +32,7 @@ class GameScene extends Phaser.Scene {
   private grapplerKey!: Phaser.Input.Keyboard.Key;
   private isChatting: boolean = false;
   private minimapGraphics!: Phaser.GameObjects.Graphics;
+  private bgImage!: Phaser.GameObjects.Image;
 
   constructor() {
     super("GameScene");
@@ -49,8 +50,8 @@ class GameScene extends Phaser.Scene {
   }
 
   async create() {
-    const bg = this.add.image(400, 300, "background");
-    bg.setDisplaySize(800, 600);
+    this.bgImage = this.add.image(400, 300, "background");
+    this.bgImage.setDisplaySize(800, 600);
 
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.attackKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
@@ -199,6 +200,24 @@ class GameScene extends Phaser.Scene {
         }
       });
 
+      this.room.state.onChange((changes: any) => {
+         changes.forEach((change: any) => {
+             if (change.field === "isNight") {
+                 if (change.value) {
+                     this.bgImage.setTint(0x333355);
+                     const effect = this.add.text(400, 300, "NIGHT HAS FALLEN", { fontSize: '48px', color: '#ff0000', fontStyle: 'bold' });
+                     effect.setOrigin(0.5);
+                     this.tweens.add({ targets: effect, alpha: 0, duration: 3000, onComplete: () => effect.destroy() });
+                 } else {
+                     this.bgImage.clearTint();
+                     const effect = this.add.text(400, 300, "DAY HAS BROKEN", { fontSize: '48px', color: '#ffff00', fontStyle: 'bold' });
+                     effect.setOrigin(0.5);
+                     this.tweens.add({ targets: effect, alpha: 0, duration: 3000, onComplete: () => effect.destroy() });
+                 }
+             }
+         });
+      });
+
       this.room.state.players.onAdd((player: any, sessionId: string) => {
         const sprite = this.add.sprite(player.x, player.y, "wrestler");
         sprite.setScale(0.25);
@@ -230,6 +249,12 @@ class GameScene extends Phaser.Scene {
               sprite.alpha = 0.5; // blinking effect could be added, just translucent for now
           } else {
               sprite.alpha = 1.0;
+          }
+
+          if (player.isMounted) {
+              sprite.setTint(0x88ccff);
+          } else {
+              sprite.clearTint();
           }
 
           if (this.uiTexts[sessionId]) {
@@ -455,10 +480,16 @@ class GameScene extends Phaser.Scene {
     let dx = 0;
     let dy = 0;
 
-    if (this.cursors.left.isDown) { dx -= 5; moved = true; }
-    if (this.cursors.right.isDown) { dx += 5; moved = true; }
-    if (this.cursors.up.isDown) { dy -= 5; moved = true; }
-    if (this.cursors.down.isDown) { dy += 5; moved = true; }
+    let speed = 5;
+    const myState = this.room.state.players.get(this.room.sessionId);
+    if (myState && myState.isMounted) {
+        speed = 10;
+    }
+
+    if (this.cursors.left.isDown) { dx -= speed; moved = true; }
+    if (this.cursors.right.isDown) { dx += speed; moved = true; }
+    if (this.cursors.up.isDown) { dy -= speed; moved = true; }
+    if (this.cursors.down.isDown) { dy += speed; moved = true; }
 
     if (moved) {
       const mySprite = this.players[this.room.sessionId];

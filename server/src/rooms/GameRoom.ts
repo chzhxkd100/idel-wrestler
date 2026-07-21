@@ -7,6 +7,7 @@ const prisma = new PrismaClient();
 export class GameRoom extends Room<GameState> {
   maxClients = 100;
   private gameLoop: any;
+  private dayNightTimer: number = 0;
 
   onCreate(options: any) {
     this.setState(new GameState());
@@ -107,6 +108,12 @@ export class GameRoom extends Room<GameState> {
              this.broadcast("chat_message", { targetId: player.id, message: `Joined guild [${guildName}]!` });
              return;
           }
+      }
+      if (msg.trim() === "/mount") {
+          player.isMounted = !player.isMounted;
+          const status = player.isMounted ? "mounted" : "dismounted";
+          this.broadcast("chat_message", { targetId: player.id, message: `[System] You have ${status}!` });
+          return;
       }
 
       this.broadcast("chat_message", { targetId: player.id, message: msg });
@@ -347,6 +354,15 @@ export class GameRoom extends Room<GameState> {
   }
 
   update(deltaTime: number) {
+    // Day/Night Cycle
+    this.dayNightTimer += deltaTime;
+    if (this.dayNightTimer >= 60000) { // 60 seconds
+        this.dayNightTimer -= 60000;
+        this.state.isNight = !this.state.isNight;
+        const timeStr = this.state.isNight ? "NIGHT" : "DAY";
+        console.log(`Time changed to ${timeStr}`);
+    }
+
     // Regenerate MP
     this.state.players.forEach(player => {
        if (player.hp > 0 && player.mp < player.maxMp) {
@@ -409,8 +425,11 @@ export class GameRoom extends Room<GameState> {
              if (nearestPlayer.invincibleUntil > Date.now()) {
                  // IMMUNE
              } else {
-                 nearestPlayer.hp -= monster.damage;
-                 this.broadcast("damage", { targetId: nearestPlayer.id, damage: monster.damage });
+                 const nightDamageMultiplier = this.state.isNight ? 1.5 : 1.0;
+                 const dmg = Math.floor(monster.damage * nightDamageMultiplier);
+                 
+                 nearestPlayer.hp -= dmg;
+                 this.broadcast("damage", { targetId: nearestPlayer.id, damage: dmg });
                  if (nearestPlayer.hp <= 0) {
                    nearestPlayer.hp = 0;
                    nearestPlayer.hp = nearestPlayer.maxHp;

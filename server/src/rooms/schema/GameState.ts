@@ -24,6 +24,7 @@ export class Player extends Schema implements IPlayerState {
   @type("string") jobClass: string;
   @type("string") guildName: string;
   @type("number") invincibleUntil: number;
+  @type("boolean") isMounted: boolean;
 
   constructor(id: string, name: string) {
     super();
@@ -48,6 +49,7 @@ export class Player extends Schema implements IPlayerState {
     this.jobClass = "Novice";
     this.guildName = "None";
     this.invincibleUntil = 0;
+    this.isMounted = false;
     this.inventory.set("gold", 0);
   }
 }
@@ -124,4 +126,5 @@ export class GameState extends Schema {
   @type({ map: Monster }) monsters = new MapSchema<Monster>();
   @type({ map: Item }) items = new MapSchema<Item>();
   @type({ map: Npc }) npcs = new MapSchema<Npc>();
+  @type("boolean") isNight: boolean = false;
 }

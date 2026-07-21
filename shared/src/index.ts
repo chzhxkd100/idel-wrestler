@@ -21,6 +21,7 @@ export interface IPlayerState {
   jobClass: string;
   guildName: string;
   invincibleUntil: number;
+  isMounted: boolean;
 }
 
 export interface IMonsterState {
@@ -31,6 +32,14 @@ export interface IMonsterState {
   hp: number;
   maxHp: number;
   isBoss: boolean;
+}
+
+export interface IGameState {
+  players: Map<string, IPlayerState>;
+  monsters: Map<string, IMonsterState>;
+  items: Map<string, IItemState>;
+  npcs: Map<string, INpcState>;
+  isNight: boolean;
 }
 
 export interface IItemState {
