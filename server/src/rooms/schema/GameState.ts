@@ -25,6 +25,7 @@ export class Player extends Schema implements IPlayerState {
   @type("string") guildName: string;
   @type("number") invincibleUntil: number;
   @type("boolean") isMounted: boolean;
+  @type("boolean") hasWeapon: boolean;
 
   constructor(id: string, name: string) {
     super();
@@ -50,6 +51,7 @@ export class Player extends Schema implements IPlayerState {
     this.guildName = "None";
     this.invincibleUntil = 0;
     this.isMounted = false;
+    this.hasWeapon = false;
     this.inventory.set("gold", 0);
   }
 }
@@ -62,29 +64,39 @@ export class Monster extends Schema implements IMonsterState {
   @type("number") hp: number;
   @type("number") maxHp: number;
   @type("boolean") isBoss: boolean;
-
-  targetId: string | null = null;
+  @type("boolean") isWorldBoss: boolean;
+  
+  damage: number = 10;
   speed: number = 2;
-  damage: number = 5;
-  expReward: number = 20;
+  expReward: number = 10;
 
-  constructor(id: string, isBoss: boolean = false) {
+  constructor(id: string, isBoss: boolean = false, isWorldBoss: boolean = false) {
     super();
     this.id = id;
-    this.type = isBoss ? "boss_ogre" : "goblin";
-    this.x = Math.random() * 800;
-    this.y = Math.random() * 600;
+    this.type = isWorldBoss ? "world_boss" : (isBoss ? "boss" : "normal");
     this.isBoss = isBoss;
-
-    if (isBoss) {
-      this.maxHp = 500;
-      this.hp = 500;
-      this.damage = 15;
-      this.speed = 1.5;
-      this.expReward = 200;
+    this.isWorldBoss = isWorldBoss;
+    this.x = Math.random() * 600 + 100;
+    this.y = Math.random() * 400 + 100;
+    
+    if (isWorldBoss) {
+        this.maxHp = 10000;
+        this.hp = this.maxHp;
+        this.damage = 100;
+        this.speed = 4;
+        this.expReward = 5000;
+    } else if (isBoss) {
+        this.maxHp = 500;
+        this.hp = this.maxHp;
+        this.damage = 30;
+        this.speed = 3;
+        this.expReward = 100;
     } else {
-      this.maxHp = 50;
-      this.hp = 50;
+        this.maxHp = 50;
+        this.hp = this.maxHp;
+        this.damage = 10;
+        this.speed = 1.5;
+        this.expReward = 10;
     }
   }
 }

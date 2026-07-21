@@ -81,17 +81,29 @@ class GameScene extends Phaser.Scene {
       console.log("Joined room:", this.room.roomId);
 
       this.room.onMessage("damage", (message) => {
-        const { targetId, damage } = message;
+        const { targetId, damage, isCrit } = message;
         let target = this.players[targetId] || this.monsters[targetId];
         if (target) {
-          const dmgText = this.add.text(target.x, target.y - 50, `-${damage}`, { fontSize: '20px', color: '#ff0000', fontStyle: 'bold' });
-          this.tweens.add({
-            targets: dmgText,
-            y: target.y - 100,
-            alpha: 0,
-            duration: 1000,
-            onComplete: () => dmgText.destroy()
-          });
+          if (isCrit) {
+             const dmgText = this.add.text(target.x, target.y - 50, `CRITICAL! -${damage}`, { fontSize: '32px', color: '#ffff00', fontStyle: 'bold' });
+             this.tweens.add({
+                targets: dmgText,
+                y: target.y - 120,
+                scale: 1.5,
+                alpha: 0,
+                duration: 1500,
+                onComplete: () => dmgText.destroy()
+             });
+          } else {
+             const dmgText = this.add.text(target.x, target.y - 50, `-${damage}`, { fontSize: '20px', color: '#ff0000', fontStyle: 'bold' });
+             this.tweens.add({
+               targets: dmgText,
+               y: target.y - 100,
+               alpha: 0,
+               duration: 1000,
+               onComplete: () => dmgText.destroy()
+             });
+          }
         }
       });
 
@@ -241,6 +253,14 @@ class GameScene extends Phaser.Scene {
             this.uiTexts[sessionId + "_belt"] = beltIcon as any;
         }
 
+        let weaponIcon: Phaser.GameObjects.Sprite | null = null;
+        if (player.hasWeapon) {
+            weaponIcon = this.add.sprite(player.x - 30, player.y - 30, "skill");
+            weaponIcon.setScale(0.3);
+            weaponIcon.setTint(0xffaa00);
+            this.uiTexts[sessionId + "_weapon"] = weaponIcon as any;
+        }
+
         player.onChange(() => {
           sprite.x = player.x;
           sprite.y = player.y;
@@ -281,6 +301,17 @@ class GameScene extends Phaser.Scene {
               beltIcon.y = player.y - 30;
           }
 
+          if (player.hasWeapon && !weaponIcon) {
+              weaponIcon = this.add.sprite(player.x - 30, player.y - 30, "skill");
+              weaponIcon.setScale(0.3);
+              weaponIcon.setTint(0xffaa00);
+              this.uiTexts[sessionId + "_weapon"] = weaponIcon as any;
+          }
+          if (weaponIcon) {
+              weaponIcon.x = player.x - 30;
+              weaponIcon.y = player.y - 30;
+          }
+
           if (sessionId === this.room.sessionId) {
               this.myExpText.setText(`EXP: ${player.exp}/${player.maxExp}`);
               this.myLevelText.setText(`LVL: ${player.level}`);
@@ -317,18 +348,21 @@ class GameScene extends Phaser.Scene {
       });
 
       this.room.state.monsters.onAdd((monster: any, id: string) => {
-        const spriteKey = monster.isBoss ? "boss" : "monster";
+        const spriteKey = monster.isWorldBoss ? "boss" : (monster.isBoss ? "boss" : "monster");
         const sprite = this.add.sprite(monster.x, monster.y, spriteKey);
         
-        if (monster.isBoss) {
+        if (monster.isWorldBoss) {
+            sprite.setScale(2.0);
+            sprite.setTint(0xff00ff);
+        } else if (monster.isBoss) {
             sprite.setScale(0.8);
         } else {
             sprite.setScale(0.3);
         }
 
         this.monsters[id] = sprite;
-        const color = monster.isBoss ? '#ff0000' : '#ffaaaa';
-        const hpText = this.add.text(monster.x, monster.y - (monster.isBoss ? 80 : 40), `HP: ${monster.hp}/${monster.maxHp}`, { fontSize: '16px', color });
+        const color = monster.isWorldBoss ? '#ff00ff' : (monster.isBoss ? '#ff0000' : '#ffaaaa');
+        const hpText = this.add.text(monster.x, monster.y - (monster.isWorldBoss ? 150 : (monster.isBoss ? 80 : 40)), `HP: ${monster.hp}/${monster.maxHp}`, { fontSize: '16px', color, fontStyle: 'bold' });
         hpText.setOrigin(0.5);
         this.uiTexts[id] = hpText;
 
@@ -336,7 +370,7 @@ class GameScene extends Phaser.Scene {
           sprite.x = monster.x;
           sprite.y = monster.y;
           hpText.x = monster.x;
-          hpText.y = monster.y - (monster.isBoss ? 80 : 40);
+          hpText.y = monster.y - (monster.isWorldBoss ? 150 : (monster.isBoss ? 80 : 40));
           hpText.setText(`HP: ${monster.hp}/${monster.maxHp}`);
         });
       });

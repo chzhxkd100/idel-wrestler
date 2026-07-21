@@ -54,6 +54,10 @@ export class GameRoom extends Room<GameState> {
               player.hasBelt = true;
               console.log(`${player.name} obtained the Championship Belt!`);
               this.broadcast("belt_effect", { targetId: player.id });
+          } else if (item.type === "weapon" && !player.hasWeapon) {
+              player.hasWeapon = true;
+              console.log(`${player.name} obtained the Legendary Weapon!`);
+              this.broadcast("chat_message", { targetId: "SYSTEM", message: `${player.name} obtained the Legendary Weapon!` });
           }
           this.state.items.delete(id);
           pickedUp = true;
@@ -145,12 +149,15 @@ export class GameRoom extends Room<GameState> {
         this.broadcast("skill_effect", { skill: skillName, x: player.x, y: player.y, playerId: player.id });
 
         // AOE Damage
-        const damage = (player.str * 3) + (player.hasBelt ? 50 : 0);
+        const isCrit = Math.random() < 0.1;
+        const baseDamage = (player.str * 3) + (player.hasBelt ? 50 : 0) + (player.hasWeapon ? 100 : 0);
+        const damage = isCrit ? baseDamage * 2 : baseDamage;
+
         this.state.monsters.forEach((monster, id) => {
           const dist = Math.sqrt(Math.pow(player.x - monster.x, 2) + Math.pow(player.y - monster.y, 2));
           if (dist < 100) { // AOE radius
              monster.hp -= damage;
-             this.broadcast("damage", { targetId: id, damage });
+             this.broadcast("damage", { targetId: id, damage, isCrit });
 
              if (monster.hp <= 0) {
                 monster.hp = 0;
@@ -184,7 +191,11 @@ export class GameRoom extends Room<GameState> {
                 }
                 
                 // Drop Item
-                if (monster.isBoss && Math.random() < 0.2) {
+                if (monster.isWorldBoss) {
+                   const weapon = new Item(`item_weapon_${Date.now()}_${id}`, "weapon", 1, monster.x, monster.y);
+                   this.state.items.set(weapon.id, weapon);
+                   this.broadcast("chat_message", { targetId: "SYSTEM", message: "WORLD BOSS DEFEATED!" });
+                } else if (monster.isBoss && Math.random() < 0.2) {
                    const belt = new Item(`item_belt_${Date.now()}_${id}`, "belt", 1, monster.x, monster.y);
                    this.state.items.set(belt.id, belt);
                 } else if (monster.isBoss || Math.random() < 0.5) { 
@@ -213,7 +224,7 @@ export class GameRoom extends Room<GameState> {
                   }
 
                   otherPlayer.hp -= damage;
-                  this.broadcast("damage", { targetId: id, damage });
+                  this.broadcast("damage", { targetId: id, damage, isCrit });
                   
                   if (otherPlayer.hp <= 0) {
                       otherPlayer.hp = 0;
@@ -245,11 +256,13 @@ export class GameRoom extends Room<GameState> {
       const target = this.state.players.get(data.targetId) || this.state.monsters.get(data.targetId);
       
       if (attacker && target) {
-          const damage = data.isMonster ? attacker.str + (attacker.hasBelt ? 20 : 0) : ((target as any).damage || 10);
+          const isCrit = Math.random() < 0.1;
+          const baseDamage = data.isMonster ? attacker.str + (attacker.hasBelt ? 20 : 0) + (attacker.hasWeapon ? 100 : 0) : ((target as any).damage || 10);
+          const damage = isCrit ? baseDamage * 2 : baseDamage;
           
           if (data.isMonster) {
               target.hp -= damage;
-              this.broadcast("damage", { targetId: data.targetId, damage });
+              this.broadcast("damage", { targetId: data.targetId, damage, isCrit });
 
               if (target.hp <= 0) {
                   target.hp = 0;
@@ -281,8 +294,14 @@ export class GameRoom extends Room<GameState> {
                      this.broadcast("levelup", { playerId: attacker.id, level: attacker.level });
                   }
 
+                  let isTargetWorldBoss = (target as Monster).isWorldBoss;
                   let isTargetBoss = (target as Monster).isBoss;
-                  if (isTargetBoss && Math.random() < 0.2) {
+                  
+                  if (isTargetWorldBoss) {
+                     const weapon = new Item(`item_weapon_${Date.now()}_${data.targetId}`, "weapon", 1, target.x, target.y);
+                     this.state.items.set(weapon.id, weapon);
+                     this.broadcast("chat_message", { targetId: "SYSTEM", message: "WORLD BOSS DEFEATED!" });
+                  } else if (isTargetBoss && Math.random() < 0.2) {
                      const belt = new Item(`item_belt_${Date.now()}_${data.targetId}`, "belt", 1, target.x, target.y);
                      this.state.items.set(belt.id, belt);
                   } else if (isTargetBoss || Math.random() < 0.5) { 
@@ -307,7 +326,7 @@ export class GameRoom extends Room<GameState> {
              }
 
              deadPlayer.hp -= damage;
-             this.broadcast("damage", { targetId: data.targetId, damage });
+             this.broadcast("damage", { targetId: data.targetId, damage, isCrit });
 
              if (deadPlayer.hp <= 0) {
                  deadPlayer.hp = 0;
@@ -361,6 +380,12 @@ export class GameRoom extends Room<GameState> {
         this.state.isNight = !this.state.isNight;
         const timeStr = this.state.isNight ? "NIGHT" : "DAY";
         console.log(`Time changed to ${timeStr}`);
+
+        if (this.state.isNight) {
+            const wb = new Monster(`world_boss_${Date.now()}`, true, true);
+            this.state.monsters.set(wb.id, wb);
+            this.broadcast("chat_message", { targetId: "SYSTEM", message: "THE WORLD BOSS HAS AWAKENED!" });
+        }
     }
 
     // Regenerate MP
@@ -484,6 +509,7 @@ export class GameRoom extends Room<GameState> {
     player.questProgress = dbUser.questProgress;
     player.jobClass = dbUser.jobClass;
     player.guildName = dbUser.guildName;
+    player.hasWeapon = dbUser.hasWeapon;
     player.inventory.set("gold", dbUser.gold);
 
     this.state.players.set(client.sessionId, player);
@@ -512,7 +538,8 @@ export class GameRoom extends Room<GameState> {
                questStatus: player.questStatus,
                questProgress: player.questProgress,
                jobClass: player.jobClass,
-               guildName: player.guildName
+               guildName: player.guildName,
+               hasWeapon: player.hasWeapon
            }
        });
     }

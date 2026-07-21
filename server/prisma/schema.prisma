@@ -31,4 +31,5 @@ model User {
   questProgress Int      @default(0)
   jobClass      String   @default("Novice")
   guildName     String   @default("None")
+  hasWeapon     Boolean  @default(false)
 }

@@ -22,6 +22,7 @@ export interface IPlayerState {
   guildName: string;
   invincibleUntil: number;
   isMounted: boolean;
+  hasWeapon: boolean;
 }
 
 export interface IMonsterState {
@@ -32,6 +33,7 @@ export interface IMonsterState {
   hp: number;
   maxHp: number;
   isBoss: boolean;
+  isWorldBoss: boolean;
 }
 
 export interface IGameState {
