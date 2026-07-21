@@ -92,6 +92,13 @@ export class GameRoom extends Room<GameState> {
       }
     });
 
+    this.onMessage("chat", (client, data) => {
+      const player = this.state.players.get(client.sessionId);
+      if (!player) return;
+      this.broadcast("chat_message", { targetId: player.id, message: data.message });
+      console.log(`[Chat] ${player.name}: ${data.message}`);
+    });
+
     this.onMessage("skill_cast", (client, data) => {
       const player = this.state.players.get(client.sessionId);
       if (!player || player.hp <= 0) return;

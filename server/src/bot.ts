@@ -11,6 +11,11 @@ async function startBot() {
       const myPlayer = room.state.players.get(room.sessionId);
       if (!myPlayer) return;
 
+      // Random Chat Macro
+      if (Math.random() < 0.01) {
+          room.send("chat", { message: "I am the best wrestler! 👑" });
+      }
+
       // Handle Quests
       if (myPlayer.questStatus === 0 || (myPlayer.questStatus === 1 && myPlayer.questProgress >= 5)) {
           const shopNpc = room.state.npcs.get("npc_shop");

@@ -23,7 +23,10 @@
     </style>
   </head>
   <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
-  </body>
+    <div id="game-container"></div>
+  <div id="chat-overlay" style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100; display: none;">
+     <input type="text" id="chatInput" style="padding: 10px; width: 300px; font-size: 16px; border: 2px solid #ccc; border-radius: 5px; background: rgba(0,0,0,0.8); color: white;" placeholder="Press Enter to send..." autocomplete="off">
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
 </html>

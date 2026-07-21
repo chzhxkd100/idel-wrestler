@@ -24,7 +24,10 @@ class GameScene extends Phaser.Scene {
   private myGoldText!: Phaser.GameObjects.Text;
   private myStatsText!: Phaser.GameObjects.Text;
   private myQuestText!: Phaser.GameObjects.Text;
+  private myLeaderboardText!: Phaser.GameObjects.Text;
   private questKey!: Phaser.Input.Keyboard.Key;
+  private enterKey!: Phaser.Input.Keyboard.Key;
+  private isChatting: boolean = false;
 
   constructor() {
     super("GameScene");
@@ -50,10 +53,9 @@ class GameScene extends Phaser.Scene {
     this.pickupKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
     this.skillKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
     this.buyKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.B);
-    this.statStrKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.ONE);
-    this.statAgiKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.TWO);
     this.statVitKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.THREE);
     this.questKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
+    this.enterKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
 
     this.myLevelText = this.add.text(10, 10, "LVL: 1", { fontSize: '24px', color: '#fff' });
     this.myExpText = this.add.text(10, 40, "EXP: 0/100", { fontSize: '24px', color: '#fff' });
@@ -61,6 +63,7 @@ class GameScene extends Phaser.Scene {
     this.myGoldText = this.add.text(10, 100, "GOLD: 0", { fontSize: '24px', color: '#ffff00' });
     this.myStatsText = this.add.text(600, 10, "SP: 0\n1: STR 10\n2: AGI 10\n3: VIT 10", { fontSize: '20px', color: '#ffcc00', align: 'right' });
     this.myQuestText = this.add.text(600, 120, "No Quest", { fontSize: '20px', color: '#ff00ff', align: 'right' });
+    this.myLeaderboardText = this.add.text(600, 200, "👑 TOP RANKERS 👑\n...", { fontSize: '20px', color: '#ffffff', align: 'right' });
     this.add.text(10, 550, "Z: Skill | Shift: Pickup | B: Buy Heal(50G) | Q: Quest", { fontSize: '20px', color: '#fff' });
 
     try {
@@ -154,6 +157,23 @@ class GameScene extends Phaser.Scene {
          }
       });
 
+      this.room.onMessage("chat_message", (message) => {
+         const { targetId, message: chatMsg } = message;
+         const playerSprite = this.players[targetId];
+         if (playerSprite) {
+             const effect = this.add.text(playerSprite.x, playerSprite.y - 70, chatMsg, { fontSize: '18px', color: '#000000', backgroundColor: '#ffffcc', padding: { x: 5, y: 5 } });
+             effect.setOrigin(0.5);
+             this.tweens.add({
+                targets: effect,
+                y: playerSprite.y - 100,
+                alpha: 0,
+                duration: 3000,
+                delay: 2000,
+                onComplete: () => effect.destroy()
+             });
+         }
+      });
+
       this.room.onMessage("levelup", (message) => {
         const { playerId, level } = message;
         if (playerId === this.room.sessionId) {
@@ -222,6 +242,7 @@ class GameScene extends Phaser.Scene {
                  this.myGoldText.setText(`GOLD: ${gold}`);
               }
           }
+          this.updateLeaderboard();
         });
       });
 
@@ -234,6 +255,7 @@ class GameScene extends Phaser.Scene {
           this.uiTexts[sessionId].destroy();
           delete this.uiTexts[sessionId];
         }
+        this.updateLeaderboard();
       });
 
       this.room.state.monsters.onAdd((monster: any, id: string) => {
@@ -313,8 +335,41 @@ class GameScene extends Phaser.Scene {
     }
   }
 
+  updateLeaderboard() {
+      if (!this.room || !this.room.state) return;
+      const playersList: any[] = [];
+      this.room.state.players.forEach((p: any) => playersList.push(p));
+      playersList.sort((a, b) => b.level === a.level ? b.exp - a.exp : b.level - a.level);
+      
+      let topText = "👑 TOP RANKERS 👑\n";
+      for (let i = 0; i < Math.min(3, playersList.length); i++) {
+          topText += `${i+1}. ${playersList[i].name} - Lv.${playersList[i].level}\n`;
+      }
+      this.myLeaderboardText.setText(topText);
+  }
+
   update() {
     if (!this.room) return;
+
+    if (Phaser.Input.Keyboard.JustDown(this.enterKey)) {
+        if (!this.isChatting) {
+            this.isChatting = true;
+            document.getElementById("chat-overlay")!.style.display = "block";
+            const chatInput = document.getElementById("chatInput") as HTMLInputElement;
+            chatInput.focus();
+        } else {
+            const chatInput = document.getElementById("chatInput") as HTMLInputElement;
+            if (chatInput.value.trim() !== "") {
+                this.room.send("chat", { message: chatInput.value });
+                chatInput.value = "";
+            }
+            chatInput.blur();
+            document.getElementById("chat-overlay")!.style.display = "none";
+            this.isChatting = false;
+        }
+    }
+
+    if (this.isChatting) return;
 
     let moved = false;
     let dx = 0;
@@ -418,7 +473,7 @@ const config: Phaser.Types.Core.GameConfig = {
   width: 800,
   height: 600,
   scene: GameScene,
-  parent: "app",
+  parent: "game-container",
   physics: {
     default: 'arcade',
     arcade: { gravity: { x: 0, y: 0 }, debug: false }
