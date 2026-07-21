@@ -17,6 +17,23 @@ export class GameRoom extends Room<GameState> {
       }
     });
 
+    this.onMessage("add_stat", (client, data) => {
+      const player = this.state.players.get(client.sessionId);
+      if (!player || player.hp <= 0 || player.sp <= 0) return;
+      
+      const { stat } = data;
+      if (stat === "str") player.str += 1;
+      else if (stat === "agi") player.agi += 1;
+      else if (stat === "vit") {
+          player.vit += 1;
+          player.maxHp += 10;
+          player.hp += 10;
+      } else return;
+      
+      player.sp -= 1;
+      console.log(`${player.name} added +1 to ${stat}`);
+    });
+
     this.onMessage("pickup", (client) => {
       const player = this.state.players.get(client.sessionId);
       if (!player || player.hp <= 0) return;
@@ -26,11 +43,17 @@ export class GameRoom extends Room<GameState> {
         if (pickedUp) return; // one per click
         const dist = Math.sqrt(Math.pow(player.x - item.x, 2) + Math.pow(player.y - item.y, 2));
         if (dist < 50) { // pickup range
-          const currentAmount = player.inventory.get(item.type) || 0;
-          player.inventory.set(item.type, currentAmount + item.amount);
+          if (item.type === "gold") {
+              const currentAmount = player.inventory.get(item.type) || 0;
+              player.inventory.set(item.type, currentAmount + item.amount);
+              console.log(`${player.name} picked up ${item.amount} ${item.type}`);
+          } else if (item.type === "belt" && !player.hasBelt) {
+              player.hasBelt = true;
+              console.log(`${player.name} obtained the Championship Belt!`);
+              this.broadcast("belt_effect", { targetId: player.id });
+          }
           this.state.items.delete(id);
           pickedUp = true;
-          console.log(`${player.name} picked up ${item.amount} ${item.type}`);
         }
       });
     });
@@ -65,7 +88,7 @@ export class GameRoom extends Room<GameState> {
         this.broadcast("skill_effect", { skill: skillName, x: player.x, y: player.y, playerId: player.id });
 
         // AOE Damage
-        const damage = 30;
+        const damage = (player.str * 3) + (player.hasBelt ? 50 : 0);
         this.state.monsters.forEach((monster, id) => {
           const dist = Math.sqrt(Math.pow(player.x - monster.x, 2) + Math.pow(player.y - monster.y, 2));
           if (dist < 100) { // AOE radius
@@ -74,7 +97,7 @@ export class GameRoom extends Room<GameState> {
 
              if (monster.hp <= 0) {
                 monster.hp = 0;
-                player.exp += 20;
+                player.exp += monster.expReward;
                 if (player.exp >= player.maxExp) {
                    player.level++;
                    player.exp = 0;
@@ -83,12 +106,16 @@ export class GameRoom extends Room<GameState> {
                    player.hp = player.maxHp;
                    player.maxMp += 10;
                    player.mp = player.maxMp;
+                   player.sp += 5; // Give SP
                    this.broadcast("levelup", { playerId: player.id, level: player.level });
                 }
                 
                 // Drop Item
-                if (Math.random() < 0.5) { // 50% drop rate
-                  const dropAmount = Math.floor(Math.random() * 50) + 10;
+                if (monster.isBoss && Math.random() < 0.2) {
+                   const belt = new Item(`item_belt_${Date.now()}_${id}`, "belt", 1, monster.x, monster.y);
+                   this.state.items.set(belt.id, belt);
+                } else if (monster.isBoss || Math.random() < 0.5) { 
+                  const dropAmount = monster.isBoss ? Math.floor(Math.random() * 200) + 100 : Math.floor(Math.random() * 50) + 10;
                   const item = new Item(`item_${Date.now()}_${id}`, "gold", dropAmount, monster.x, monster.y);
                   this.state.items.set(item.id, item);
                 }
@@ -102,21 +129,20 @@ export class GameRoom extends Room<GameState> {
 
     this.onMessage("attack", (client, data) => {
       const attacker = this.state.players.get(client.sessionId);
-      const target = this.state.players.get(data.targetId);
+      const target = this.state.players.get(data.targetId) || this.state.monsters.get(data.targetId);
       
-      if (attacker && target && target.hp > 0) {
-        const damage = Math.floor(Math.random() * 10) + 5; // 5-14 damage
-        target.hp -= damage;
-        
-        // Broadcast damage text
-        this.broadcast("damage", { targetId: data.targetId, damage });
+      if (attacker && target) {
+          const damage = data.isMonster ? attacker.str + (attacker.hasBelt ? 20 : 0) : ((target as any).damage || 10);
+          target.hp -= damage;
+          
+          this.broadcast("damage", { targetId: data.targetId, damage });
 
-        if (target.hp <= 0) {
+          if (target.hp <= 0) {
           target.hp = 0;
-          console.log(`${target.name} was defeated by ${attacker.name}!`);
+          console.log(`${(target as any).name || (target as any).type} was defeated by ${attacker.name}!`);
           
             if (data.isMonster) {
-            attacker.exp += 20; // Hardcoded exp reward
+            attacker.exp += (target as Monster).expReward; 
             if (attacker.exp >= attacker.maxExp) {
                attacker.level++;
                attacker.exp = 0;
@@ -125,6 +151,7 @@ export class GameRoom extends Room<GameState> {
                attacker.hp = attacker.maxHp;
                attacker.maxMp += 10;
                attacker.mp = attacker.maxMp;
+               attacker.sp += 5;
                this.broadcast("levelup", { playerId: attacker.id, level: attacker.level });
             }
 
@@ -134,7 +161,10 @@ export class GameRoom extends Room<GameState> {
                isTargetBoss = target.isBoss;
             }
 
-            if (isTargetBoss || Math.random() < 0.5) { // Boss drops guaranteed, 50% for normal
+            if (isTargetBoss && Math.random() < 0.2) {
+               const belt = new Item(`item_belt_${Date.now()}_${data.targetId}`, "belt", 1, target.x, target.y);
+               this.state.items.set(belt.id, belt);
+            } else if (isTargetBoss || Math.random() < 0.5) { 
               const dropAmount = isTargetBoss ? Math.floor(Math.random() * 200) + 100 : Math.floor(Math.random() * 50) + 10;
               const item = new Item(`item_${Date.now()}_${data.targetId}`, "gold", dropAmount, target.x, target.y);
               this.state.items.set(item.id, item);

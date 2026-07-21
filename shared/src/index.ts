@@ -11,6 +11,11 @@ export interface IPlayerState {
   exp: number;
   maxExp: number;
   inventory: any;
+  sp: number;
+  str: number;
+  agi: number;
+  vit: number;
+  hasBelt: boolean;
 }
 
 export interface IMonsterState {

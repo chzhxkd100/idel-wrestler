@@ -14,6 +14,11 @@ export class Player extends Schema implements IPlayerState {
   @type("number") exp: number;
   @type("number") maxExp: number;
   @type({ map: "number" }) inventory = new MapSchema<number>();
+  @type("number") sp: number;
+  @type("number") str: number;
+  @type("number") agi: number;
+  @type("number") vit: number;
+  @type("boolean") hasBelt: boolean;
 
   constructor(id: string, name: string) {
     super();
@@ -28,6 +33,11 @@ export class Player extends Schema implements IPlayerState {
     this.mp = 50;
     this.exp = 0;
     this.maxExp = 100;
+    this.sp = 0;
+    this.str = 10;
+    this.agi = 10;
+    this.vit = 10;
+    this.hasBelt = false;
     this.inventory.set("gold", 0);
   }
 }

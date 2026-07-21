@@ -11,6 +11,12 @@ async function startBot() {
       const myPlayer = room.state.players.get(room.sessionId);
       if (!myPlayer) return;
 
+      // Allocate SP to STR
+      if (myPlayer.sp > 0) {
+          room.send("add_stat", { stat: "str" });
+          console.log("Bot allocated SP to STR");
+      }
+
       // Heal if low HP
       if (myPlayer.hp < myPlayer.maxHp * 0.3) {
           const shopNpc = room.state.npcs.get("npc_shop");

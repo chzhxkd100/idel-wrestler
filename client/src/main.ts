@@ -15,10 +15,14 @@ class GameScene extends Phaser.Scene {
   private pickupKey!: Phaser.Input.Keyboard.Key;
   private skillKey!: Phaser.Input.Keyboard.Key;
   private buyKey!: Phaser.Input.Keyboard.Key;
+  private statStrKey!: Phaser.Input.Keyboard.Key;
+  private statAgiKey!: Phaser.Input.Keyboard.Key;
+  private statVitKey!: Phaser.Input.Keyboard.Key;
   private myLevelText!: Phaser.GameObjects.Text;
   private myExpText!: Phaser.GameObjects.Text;
   private myMpText!: Phaser.GameObjects.Text;
   private myGoldText!: Phaser.GameObjects.Text;
+  private myStatsText!: Phaser.GameObjects.Text;
 
   constructor() {
     super("GameScene");
@@ -30,6 +34,7 @@ class GameScene extends Phaser.Scene {
     this.load.image("monster", "assets/monster.png");
     this.load.image("boss", "assets/boss.png");
     this.load.image("gold", "assets/gold.png");
+    this.load.image("belt", "assets/belt.png");
     this.load.image("skill", "assets/skill.png");
     this.load.image("npc", "assets/npc.png");
   }
@@ -43,11 +48,15 @@ class GameScene extends Phaser.Scene {
     this.pickupKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
     this.skillKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
     this.buyKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.B);
+    this.statStrKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.ONE);
+    this.statAgiKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.TWO);
+    this.statVitKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.THREE);
 
     this.myLevelText = this.add.text(10, 10, "LVL: 1", { fontSize: '24px', color: '#fff' });
     this.myExpText = this.add.text(10, 40, "EXP: 0/100", { fontSize: '24px', color: '#fff' });
     this.myMpText = this.add.text(10, 70, "MP: 50/50", { fontSize: '24px', color: '#00ffff' });
     this.myGoldText = this.add.text(10, 100, "GOLD: 0", { fontSize: '24px', color: '#ffff00' });
+    this.myStatsText = this.add.text(600, 10, "SP: 0\n1: STR 10\n2: AGI 10\n3: VIT 10", { fontSize: '20px', color: '#ffcc00', align: 'right' });
     this.add.text(10, 550, "Z: Skill | Shift: Pickup | B: Buy Heal(50G)", { fontSize: '20px', color: '#fff' });
 
     try {
@@ -97,6 +106,21 @@ class GameScene extends Phaser.Scene {
          }
       });
 
+      this.room.onMessage("belt_effect", (message) => {
+         const { targetId } = message;
+         const playerSprite = this.players[targetId];
+         if (playerSprite) {
+             const effect = this.add.sprite(playerSprite.x, playerSprite.y - 60, "belt");
+             this.tweens.add({
+                targets: effect,
+                y: playerSprite.y - 100,
+                alpha: 0,
+                duration: 2000,
+                onComplete: () => effect.destroy()
+             });
+         }
+      });
+
       this.room.onMessage("levelup", (message) => {
         const { playerId, level } = message;
         if (playerId === this.room.sessionId) {
@@ -121,6 +145,13 @@ class GameScene extends Phaser.Scene {
         const hpText = this.add.text(player.x, player.y - 40, `HP: ${player.hp}/${player.maxHp}`, { fontSize: '12px', color: '#0f0' });
         hpText.setOrigin(0.5);
         this.uiTexts[sessionId] = hpText;
+        
+        let beltIcon: Phaser.GameObjects.Sprite | null = null;
+        if (player.hasBelt) {
+            beltIcon = this.add.sprite(player.x + 30, player.y - 30, "belt");
+            beltIcon.setScale(0.2);
+            this.uiTexts[sessionId + "_belt"] = beltIcon as any;
+        }
 
         player.onChange(() => {
           sprite.x = player.x;
@@ -128,10 +159,22 @@ class GameScene extends Phaser.Scene {
           hpText.x = player.x;
           hpText.y = player.y - 40;
           hpText.setText(`HP: ${player.hp}/${player.maxHp}`);
+          
+          if (player.hasBelt && !beltIcon) {
+              beltIcon = this.add.sprite(player.x + 30, player.y - 30, "belt");
+              beltIcon.setScale(0.2);
+              this.uiTexts[sessionId + "_belt"] = beltIcon as any;
+          }
+          if (beltIcon) {
+              beltIcon.x = player.x + 30;
+              beltIcon.y = player.y - 30;
+          }
+
           if (sessionId === this.room.sessionId) {
               this.myExpText.setText(`EXP: ${player.exp}/${player.maxExp}`);
               this.myLevelText.setText(`LVL: ${player.level}`);
               this.myMpText.setText(`MP: ${Math.floor(player.mp)}/${player.maxMp}`);
+              this.myStatsText.setText(`SP: ${player.sp}\n1: STR ${player.str}\n2: AGI ${player.agi}\n3: VIT ${player.vit}`);
               if (player.inventory) {
                  const gold = player.inventory.gold || 0;
                  this.myGoldText.setText(`GOLD: ${gold}`);
@@ -188,8 +231,8 @@ class GameScene extends Phaser.Scene {
       });
 
       this.room.state.items.onAdd((item: any, id: string) => {
-        const sprite = this.add.sprite(item.x, item.y, "gold");
-        sprite.setScale(0.2);
+        const sprite = this.add.sprite(item.x, item.y, item.type === "belt" ? "belt" : "gold");
+        sprite.setScale(item.type === "belt" ? 0.5 : 0.2);
         this.items[id] = sprite;
 
         // Bounce effect
@@ -256,6 +299,16 @@ class GameScene extends Phaser.Scene {
 
     if (Phaser.Input.Keyboard.JustDown(this.buyKey)) {
         this.room.send("buy_heal");
+    }
+
+    if (Phaser.Input.Keyboard.JustDown(this.statStrKey)) {
+        this.room.send("add_stat", { stat: "str" });
+    }
+    if (Phaser.Input.Keyboard.JustDown(this.statAgiKey)) {
+        this.room.send("add_stat", { stat: "agi" });
+    }
+    if (Phaser.Input.Keyboard.JustDown(this.statVitKey)) {
+        this.room.send("add_stat", { stat: "vit" });
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.skillKey)) {
