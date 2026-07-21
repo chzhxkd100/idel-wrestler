@@ -27,7 +27,7 @@ jobs:
       run: |
         cd server
         npx prisma generate
-        npx tsc --noEmit
+        npx tsc -b
 
     - name: Build Web Client
       run: |
