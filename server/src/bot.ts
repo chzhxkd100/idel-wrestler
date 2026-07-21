@@ -8,15 +8,28 @@ async function startBot() {
     console.log("Bot joined room:", room.roomId);
 
     setInterval(() => {
+      const myPlayer = room.state.players.get(room.sessionId);
+      if (!myPlayer) return;
+
+      // Pick up item if nearby
+      let nearItem = false;
+      room.state.items.forEach((item: any, id: string) => {
+          const dist = Math.sqrt(Math.pow(myPlayer.x - item.x, 2) + Math.pow(myPlayer.y - item.y, 2));
+          if (dist < 50) {
+             nearItem = true;
+          }
+      });
+      if (nearItem) {
+          room.send("pickup");
+          // console.log("Bot picked up an item");
+      }
+
       // Find nearest monster
       let nearestMonsterId: string | null = null;
       let minDistance = 1000;
       let targetX = -1;
       let targetY = -1;
       
-      const myPlayer = room.state.players.get(room.sessionId);
-      if (!myPlayer) return;
-
       room.state.monsters.forEach((monster: any, id: string) => {
           if (monster.hp > 0) {
              const dist = Math.sqrt(Math.pow(myPlayer.x - monster.x, 2) + Math.pow(myPlayer.y - monster.y, 2));
@@ -38,11 +51,15 @@ async function startBot() {
                   x: myPlayer.x + (dx/minDistance) * 10, 
                   y: myPlayer.y + (dy/minDistance) * 10 
               });
-              // console.log(`Bot chasing monster ${nearestMonsterId}`);
           } else {
-              // Attack
-              room.send("attack", { targetId: nearestMonsterId, isMonster: true });
-              console.log(`Bot attacking monster ${nearestMonsterId}`);
+              // Attack (use skill if enough MP, otherwise normal attack)
+              if (myPlayer.mp >= 20) {
+                  room.send("skill_cast", { skill: "lariat" });
+                  console.log(`Bot used skill Lariat!`);
+              } else {
+                  room.send("attack", { targetId: nearestMonsterId, isMonster: true });
+                  console.log(`Bot attacking monster ${nearestMonsterId}`);
+              }
           }
       } else {
           // Random movement

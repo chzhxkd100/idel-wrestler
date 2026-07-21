@@ -1,5 +1,5 @@
 import { Room, Client } from "@colyseus/core";
-import { GameState, Player, Monster } from "./schema/GameState";
+import { GameState, Player, Monster, Item } from "./schema/GameState";
 import { prisma } from "../db";
 
 export class GameRoom extends Room<GameState> {
@@ -11,9 +11,76 @@ export class GameRoom extends Room<GameState> {
 
     this.onMessage("move", (client, data) => {
       const player = this.state.players.get(client.sessionId);
-      if (player) {
+      if (player && player.hp > 0) {
         player.x = data.x;
         player.y = data.y;
+      }
+    });
+
+    this.onMessage("pickup", (client) => {
+      const player = this.state.players.get(client.sessionId);
+      if (!player || player.hp <= 0) return;
+
+      let pickedUp = false;
+      this.state.items.forEach((item, id) => {
+        if (pickedUp) return; // one per click
+        const dist = Math.sqrt(Math.pow(player.x - item.x, 2) + Math.pow(player.y - item.y, 2));
+        if (dist < 50) { // pickup range
+          const currentAmount = player.inventory.get(item.type) || 0;
+          player.inventory.set(item.type, currentAmount + item.amount);
+          this.state.items.delete(id);
+          pickedUp = true;
+          console.log(`${player.name} picked up ${item.amount} ${item.type}`);
+        }
+      });
+    });
+
+    this.onMessage("skill_cast", (client, data) => {
+      const player = this.state.players.get(client.sessionId);
+      if (!player || player.hp <= 0) return;
+      
+      const skillName = data.skill || "lariat";
+      const mpCost = 20;
+
+      if (player.mp >= mpCost) {
+        player.mp -= mpCost;
+        
+        // Broadcast skill effect to all clients
+        this.broadcast("skill_effect", { skill: skillName, x: player.x, y: player.y, playerId: player.id });
+
+        // AOE Damage
+        const damage = 30;
+        this.state.monsters.forEach((monster, id) => {
+          const dist = Math.sqrt(Math.pow(player.x - monster.x, 2) + Math.pow(player.y - monster.y, 2));
+          if (dist < 100) { // AOE radius
+             monster.hp -= damage;
+             this.broadcast("damage", { targetId: id, damage });
+
+             if (monster.hp <= 0) {
+                monster.hp = 0;
+                player.exp += 20;
+                if (player.exp >= player.maxExp) {
+                   player.level++;
+                   player.exp = 0;
+                   player.maxExp = Math.floor(player.maxExp * 1.5);
+                   player.maxHp += 20;
+                   player.hp = player.maxHp;
+                   player.maxMp += 10;
+                   player.mp = player.maxMp;
+                   this.broadcast("levelup", { playerId: player.id, level: player.level });
+                }
+                
+                // Drop Item
+                if (Math.random() < 0.5) { // 50% drop rate
+                  const dropAmount = Math.floor(Math.random() * 50) + 10;
+                  const item = new Item(`item_${Date.now()}_${id}`, "gold", dropAmount, monster.x, monster.y);
+                  this.state.items.set(item.id, item);
+                }
+
+                this.state.monsters.delete(id);
+             }
+          }
+        });
       }
     });
 
@@ -32,7 +99,7 @@ export class GameRoom extends Room<GameState> {
           target.hp = 0;
           console.log(`${target.name} was defeated by ${attacker.name}!`);
           
-          if (data.isMonster) {
+            if (data.isMonster) {
             attacker.exp += 20; // Hardcoded exp reward
             if (attacker.exp >= attacker.maxExp) {
                attacker.level++;
@@ -40,8 +107,18 @@ export class GameRoom extends Room<GameState> {
                attacker.maxExp = Math.floor(attacker.maxExp * 1.5);
                attacker.maxHp += 20;
                attacker.hp = attacker.maxHp;
+               attacker.maxMp += 10;
+               attacker.mp = attacker.maxMp;
                this.broadcast("levelup", { playerId: attacker.id, level: attacker.level });
             }
+
+            // Drop Item
+            if (Math.random() < 0.5) { // 50% drop rate
+              const dropAmount = Math.floor(Math.random() * 50) + 10;
+              const item = new Item(`item_${Date.now()}_${data.targetId}`, "gold", dropAmount, target.x, target.y);
+              this.state.items.set(item.id, item);
+            }
+
             this.state.monsters.delete(data.targetId);
           }
         }
@@ -59,6 +136,22 @@ export class GameRoom extends Room<GameState> {
   }
 
   update(deltaTime: number) {
+    // Regenerate MP
+    this.state.players.forEach(player => {
+       if (player.hp > 0 && player.mp < player.maxMp) {
+           player.mp = Math.min(player.maxMp, player.mp + 0.1);
+       }
+    });
+
+    // Respawn Monsters
+    if (this.state.monsters.size < 5) {
+       if (Math.random() < 0.05) { // Random chance to spawn per tick if below max
+          const newId = `monster_${Date.now()}`;
+          const m = new Monster(newId);
+          this.state.monsters.set(newId, m);
+       }
+    }
+
     // Monster AI Loop
     this.state.monsters.forEach((monster) => {
       // Find nearest player

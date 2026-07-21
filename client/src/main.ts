@@ -7,11 +7,16 @@ class GameScene extends Phaser.Scene {
   private room!: Colyseus.Room;
   private players: { [id: string]: Phaser.GameObjects.Sprite } = {};
   private monsters: { [id: string]: Phaser.GameObjects.Sprite } = {};
+  private items: { [id: string]: Phaser.GameObjects.Sprite } = {};
   private uiTexts: { [id: string]: Phaser.GameObjects.Text } = {};
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private attackKey!: Phaser.Input.Keyboard.Key;
+  private pickupKey!: Phaser.Input.Keyboard.Key;
+  private skillKey!: Phaser.Input.Keyboard.Key;
   private myLevelText!: Phaser.GameObjects.Text;
   private myExpText!: Phaser.GameObjects.Text;
+  private myMpText!: Phaser.GameObjects.Text;
+  private myGoldText!: Phaser.GameObjects.Text;
 
   constructor() {
     super("GameScene");
@@ -21,6 +26,8 @@ class GameScene extends Phaser.Scene {
     this.load.image("background", "assets/background.png");
     this.load.image("wrestler", "assets/wrestler.png");
     this.load.image("monster", "assets/monster.png");
+    this.load.image("gold", "assets/gold.png");
+    this.load.image("skill", "assets/skill.png");
   }
 
   async create() {
@@ -29,9 +36,13 @@ class GameScene extends Phaser.Scene {
 
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.attackKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    this.pickupKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
+    this.skillKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
 
     this.myLevelText = this.add.text(10, 10, "LVL: 1", { fontSize: '24px', color: '#fff' });
     this.myExpText = this.add.text(10, 40, "EXP: 0/100", { fontSize: '24px', color: '#fff' });
+    this.myMpText = this.add.text(10, 70, "MP: 50/50", { fontSize: '24px', color: '#00ffff' });
+    this.myGoldText = this.add.text(10, 100, "GOLD: 0", { fontSize: '24px', color: '#ffff00' });
 
     try {
       this.room = await client.joinOrCreate("game");
@@ -50,6 +61,19 @@ class GameScene extends Phaser.Scene {
             onComplete: () => dmgText.destroy()
           });
         }
+      });
+
+      this.room.onMessage("skill_effect", (message) => {
+        const { x, y } = message;
+        const effect = this.add.sprite(x, y, "skill");
+        effect.setScale(0.5);
+        this.tweens.add({
+            targets: effect,
+            scale: 1.5,
+            alpha: 0,
+            duration: 500,
+            onComplete: () => effect.destroy()
+        });
       });
 
       this.room.onMessage("levelup", (message) => {
@@ -86,6 +110,11 @@ class GameScene extends Phaser.Scene {
           if (sessionId === this.room.sessionId) {
               this.myExpText.setText(`EXP: ${player.exp}/${player.maxExp}`);
               this.myLevelText.setText(`LVL: ${player.level}`);
+              this.myMpText.setText(`MP: ${Math.floor(player.mp)}/${player.maxMp}`);
+              if (player.inventory) {
+                 const gold = player.inventory.gold || 0;
+                 this.myGoldText.setText(`GOLD: ${gold}`);
+              }
           }
         });
       });
@@ -130,6 +159,28 @@ class GameScene extends Phaser.Scene {
         }
       });
 
+      this.room.state.items.onAdd((item: any, id: string) => {
+        const sprite = this.add.sprite(item.x, item.y, "gold");
+        sprite.setScale(0.2);
+        this.items[id] = sprite;
+
+        // Bounce effect
+        this.tweens.add({
+           targets: sprite,
+           y: item.y - 15,
+           yoyo: true,
+           repeat: -1,
+           duration: 500
+        });
+      });
+
+      this.room.state.items.onRemove((item: any, id: string) => {
+        if (this.items[id]) {
+          this.items[id].destroy();
+          delete this.items[id];
+        }
+      });
+
     } catch (e) {
       console.error("Join error:", e);
     }
@@ -155,6 +206,14 @@ class GameScene extends Phaser.Scene {
           y: mySprite.y + dy
         });
       }
+    }
+
+    if (Phaser.Input.Keyboard.JustDown(this.pickupKey)) {
+        this.room.send("pickup");
+    }
+
+    if (Phaser.Input.Keyboard.JustDown(this.skillKey)) {
+        this.room.send("skill_cast", { skill: "lariat" });
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.attackKey)) {
