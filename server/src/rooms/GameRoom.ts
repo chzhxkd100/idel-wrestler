@@ -103,11 +103,34 @@ export class GameRoom extends Room<GameState> {
       }
     });
 
+    this.onMessage("quick_heal", (client) => {
+       const player = this.state.players.get(client.sessionId);
+       if (!player || player.hp <= 0) return;
+       const currentGold = player.inventory.get("gold") || 0;
+       if (currentGold >= 50 && player.hp < player.maxHp) {
+           player.inventory.set("gold", currentGold - 50);
+           player.hp = player.maxHp;
+           this.broadcast("heal_effect", { targetId: player.id });
+       }
+    });
+
     this.onMessage("chat", async (client, data) => {
       const player = this.state.players.get(client.sessionId);
       if (!player) return;
       
       const msg: string = data.message;
+      if (msg.startsWith("! ")) {
+          const megaphoneMsg = msg.substring(2);
+          const currentGold = player.inventory.get("gold") || 0;
+          if (currentGold >= 100) {
+              player.inventory.set("gold", currentGold - 100);
+              this.broadcast("megaphone", { sender: player.name, msg: megaphoneMsg });
+              return;
+          } else {
+              this.broadcast("chat_message", { targetId: player.id, message: `[System] You need 100 Gold for a Megaphone.` });
+              return;
+          }
+      }
       if (msg.startsWith("/guild ")) {
           const parts = msg.split(" ");
           if (parts.length >= 2) {

@@ -35,6 +35,7 @@ class GameScene extends Phaser.Scene {
   private emote4Key!: Phaser.Input.Keyboard.Key;
   private emote5Key!: Phaser.Input.Keyboard.Key;
   private emote6Key!: Phaser.Input.Keyboard.Key;
+  private healKey!: Phaser.Input.Keyboard.Key;
   private isChatting: boolean = false;
   private minimapGraphics!: Phaser.GameObjects.Graphics;
   private bgImage!: Phaser.GameObjects.Image;
@@ -79,6 +80,7 @@ class GameScene extends Phaser.Scene {
     this.grapplerKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.G);
     this.invKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.I);
     this.shopKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.P);
+    this.healKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.H);
     
     // Bind Shop Buttons
     document.getElementById("btn-buy-heal")!.onclick = () => {
@@ -224,6 +226,20 @@ class GameScene extends Phaser.Scene {
                 onComplete: () => effect.destroy()
              });
          }
+      });
+
+      this.room.onMessage("megaphone", (message) => {
+         const { sender, msg } = message;
+         const effect = this.add.text(400, 300, `[확성기] ${sender}:\n${msg}`, { fontSize: '48px', color: '#ffff00', fontStyle: 'bold', stroke: '#000000', strokeThickness: 5, align: 'center' });
+         effect.setOrigin(0.5);
+         effect.setDepth(200);
+         this.tweens.add({
+            targets: effect,
+            y: 100,
+            alpha: 0,
+            duration: 5000,
+            onComplete: () => effect.destroy()
+         });
       });
 
       this.room.onMessage("chat_message", (message) => {
@@ -691,6 +707,9 @@ class GameScene extends Phaser.Scene {
       }
       if (Phaser.Input.Keyboard.JustDown(this.emote6Key) && !this.isChatting) {
           this.room.send("chat_message", "😭");
+      }
+      if (Phaser.Input.Keyboard.JustDown(this.healKey) && !this.isChatting) {
+          this.room.send("quick_heal");
       }
 
     let moved = false;
