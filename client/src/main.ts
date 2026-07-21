@@ -30,6 +30,8 @@ class GameScene extends Phaser.Scene {
   private enterKey!: Phaser.Input.Keyboard.Key;
   private fighterKey!: Phaser.Input.Keyboard.Key;
   private grapplerKey!: Phaser.Input.Keyboard.Key;
+  private invKey!: Phaser.Input.Keyboard.Key;
+  private shopKey!: Phaser.Input.Keyboard.Key;
   private isChatting: boolean = false;
   private minimapGraphics!: Phaser.GameObjects.Graphics;
   private bgImage!: Phaser.GameObjects.Image;
@@ -58,11 +60,23 @@ class GameScene extends Phaser.Scene {
     this.pickupKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
     this.skillKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
     this.buyKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.B);
+    this.statStrKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.ONE);
+    this.statAgiKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.TWO);
     this.statVitKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.THREE);
     this.questKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
     this.enterKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
     this.fighterKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.F);
     this.grapplerKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.G);
+    this.invKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.I);
+    this.shopKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.P);
+    
+    // Bind Shop Buttons
+    document.getElementById("btn-buy-heal")!.onclick = () => {
+        this.room.send("buy_shop_item", { item: "heal" });
+    };
+    document.getElementById("btn-buy-reset")!.onclick = () => {
+        this.room.send("buy_shop_item", { item: "reset" });
+    };
 
     this.myLevelText = this.add.text(10, 10, "LVL: 1", { fontSize: '24px', color: '#fff' });
     this.myExpText = this.add.text(10, 40, "EXP: 0/100", { fontSize: '24px', color: '#fff' });
@@ -71,7 +85,7 @@ class GameScene extends Phaser.Scene {
     this.myStatsText = this.add.text(600, 10, "SP: 0\n1: STR 10\n2: AGI 10\n3: VIT 10", { fontSize: '20px', color: '#ffcc00', align: 'right' });
     this.myQuestText = this.add.text(600, 120, "No Quest", { fontSize: '20px', color: '#ff00ff', align: 'right' });
     this.myLeaderboardText = this.add.text(600, 200, "👑 TOP RANKERS 👑\n...", { fontSize: '20px', color: '#ffffff', align: 'right' });
-    this.add.text(10, 550, "Z:Skill | Shift:Pick | B:Heal | Q:Quest | F:Fighter | G:Grappler", { fontSize: '18px', color: '#fff' });
+    this.add.text(10, 550, "Z:Skill | Shift:Pick | B:Heal | Q:Quest | F:Fighter | G:Grappler | I:Inv | P:Shop", { fontSize: '18px', color: '#fff' });
 
     this.minimapGraphics = this.add.graphics();
 
@@ -329,6 +343,13 @@ class GameScene extends Phaser.Scene {
               if (player.inventory) {
                  const gold = player.inventory.gold || 0;
                  this.myGoldText.setText(`GOLD: ${gold}`);
+                 // Sync inv UI if open
+                 const invUi = document.getElementById("inventory-ui");
+                 if (invUi && invUi.style.display === "block") {
+                     document.getElementById("inv-gold")!.innerText = gold.toString();
+                     document.getElementById("inv-weapon")!.innerText = player.hasWeapon ? "Yes" : "No";
+                     document.getElementById("inv-belt")!.innerText = player.hasBelt ? "Yes" : "No";
+                 }
               }
           }
           this.updateLeaderboard();
@@ -509,6 +530,31 @@ class GameScene extends Phaser.Scene {
     }
 
     if (this.isChatting) return;
+
+      if (Phaser.Input.Keyboard.JustDown(this.invKey) && !this.isChatting) {
+          const invUi = document.getElementById("inventory-ui");
+          if (invUi) {
+              if (invUi.style.display === "none" || invUi.style.display === "") {
+                  invUi.style.display = "block";
+                  // Sync data
+                  const myState = this.room.state.players.get(this.room.sessionId);
+                  if (myState) {
+                      document.getElementById("inv-gold")!.innerText = myState.inventory.gold || 0;
+                      document.getElementById("inv-weapon")!.innerText = myState.hasWeapon ? "Yes" : "No";
+                      document.getElementById("inv-belt")!.innerText = myState.hasBelt ? "Yes" : "No";
+                  }
+              } else {
+                  invUi.style.display = "none";
+              }
+          }
+      }
+
+      if (Phaser.Input.Keyboard.JustDown(this.shopKey) && !this.isChatting) {
+          const shopUi = document.getElementById("shop-ui");
+          if (shopUi) {
+              shopUi.style.display = (shopUi.style.display === "none" || shopUi.style.display === "") ? "block" : "none";
+          }
+      }
 
     let moved = false;
     let dx = 0;

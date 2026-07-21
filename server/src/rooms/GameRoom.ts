@@ -251,7 +251,38 @@ export class GameRoom extends Room<GameState> {
       }
     });
 
-    this.onMessage("attack", (client, data) => {
+      this.onMessage("buy_shop_item", (client, data) => {
+          const player = this.state.players.get(client.sessionId);
+          if (!player) return;
+
+          const gold = player.inventory.get("gold") || 0;
+          if (data.item === "heal") {
+              if (gold >= 50) {
+                  player.inventory.set("gold", gold - 50);
+                  player.hp = player.maxHp;
+                  player.mp = player.maxMp;
+                  this.broadcast("chat_message", { targetId: player.id, message: "[System] Fully Healed!" });
+              } else {
+                  this.broadcast("chat_message", { targetId: player.id, message: "[System] Not enough gold (50 required)." });
+              }
+          } else if (data.item === "reset") {
+              if (gold >= 500) {
+                  player.inventory.set("gold", gold - 500);
+                  const totalSpent = (player.str - 10) + (player.agi - 10) + (player.vit - 10);
+                  player.sp += totalSpent;
+                  player.str = 10;
+                  player.agi = 10;
+                  player.vit = 10;
+                  player.maxHp = 100 + (player.vit * 10);
+                  player.hp = player.maxHp;
+                  this.broadcast("chat_message", { targetId: player.id, message: "[System] Stats Reset! SP refunded." });
+              } else {
+                  this.broadcast("chat_message", { targetId: player.id, message: "[System] Not enough gold (500 required)." });
+              }
+          }
+      });
+
+      this.onMessage("attack", (client, data) => {
       const attacker = this.state.players.get(client.sessionId);
       const target = this.state.players.get(data.targetId) || this.state.monsters.get(data.targetId);
       

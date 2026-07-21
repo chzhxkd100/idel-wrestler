@@ -20,6 +20,58 @@
         width: 800px;
         height: 600px;
       }
+      
+      .ui-overlay {
+          display: none;
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 350px;
+          background: rgba(20, 20, 30, 0.85);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 10px;
+          padding: 20px;
+          color: white;
+          font-family: 'Inter', sans-serif;
+          box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+          z-index: 1000;
+      }
+      .ui-overlay h2 {
+          margin-top: 0;
+          text-align: center;
+          color: #ffcc00;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+          padding-bottom: 10px;
+      }
+      .ui-row {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 15px;
+          font-size: 18px;
+      }
+      .ui-btn {
+          width: 100%;
+          padding: 10px;
+          margin-bottom: 10px;
+          background: linear-gradient(135deg, #0077ff, #00bfff);
+          border: none;
+          border-radius: 5px;
+          color: white;
+          font-size: 16px;
+          cursor: pointer;
+      }
+      .ui-btn:active {
+          transform: scale(0.98);
+      }
+      .ui-close {
+          text-align: center;
+          margin-top: 10px;
+          color: #aaa;
+          cursor: pointer;
+          font-size: 14px;
+      }
     </style>
   </head>
   <body>
@@ -34,6 +86,22 @@
   <div id="chat-overlay" style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100; display: none;">
      <input type="text" id="chatInput" style="padding: 10px; width: 300px; font-size: 16px; border: 2px solid #ccc; border-radius: 5px; background: rgba(0,0,0,0.8); color: white;" placeholder="Press Enter to send..." autocomplete="off">
   </div>
+
+  <div id="inventory-ui" class="ui-overlay">
+      <h2>Inventory (I)</h2>
+      <div class="ui-row"><span>Gold:</span> <span id="inv-gold" style="color: #ffcc00">0</span></div>
+      <div class="ui-row"><span>Legendary Weapon:</span> <span id="inv-weapon" style="color: #00ff00">No</span></div>
+      <div class="ui-row"><span>Championship Belt:</span> <span id="inv-belt" style="color: #00ff00">No</span></div>
+      <div class="ui-close" onclick="document.getElementById('inventory-ui').style.display='none'">Close</div>
+  </div>
+
+  <div id="shop-ui" class="ui-overlay">
+      <h2>NPC Shop (P)</h2>
+      <button class="ui-btn" id="btn-buy-heal">Full Heal (50 Gold)</button>
+      <button class="ui-btn" id="btn-buy-reset">Reset Stats (500 Gold)</button>
+      <div class="ui-close" onclick="document.getElementById('shop-ui').style.display='none'">Close</div>
+  </div>
+
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
