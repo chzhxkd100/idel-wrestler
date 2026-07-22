@@ -457,10 +457,10 @@ class GameScene extends Phaser.Scene {
               
               const rebirthStr = player.rebirthCount > 0 ? `★${player.rebirthCount} ` : "";
               const afkStr = player.isAFK ? "[Zzz] " : "";
-              
+              const badgeStr = player.level >= 10 ? "🔰[LEGENDARY] " : "";
               const updatedNameStr = player.guildName !== "None" 
-                 ? `${afkStr}${rebirthStr}[${player.guildName}] [${title}] [${player.jobClass}] ${player.name || "Wrestler"}`
-                 : `${afkStr}${rebirthStr}[${title}] [${player.jobClass}] ${player.name || "Wrestler"}`;
+                 ? `${afkStr}${badgeStr}${rebirthStr}[${player.guildName}] [${title}] [${player.jobClass}] ${player.name || "Wrestler"}`
+                 : `${afkStr}${badgeStr}${rebirthStr}[${title}] [${player.jobClass}] ${player.name || "Wrestler"}`;
               this.uiTexts[sessionId + "_name"].setText(updatedNameStr);
               
               if (player.isAFK) {

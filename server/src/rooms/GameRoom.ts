@@ -334,16 +334,19 @@ export class GameRoom extends Room<GameState> {
           }
           return;
       }
-      if (msg.startsWith("/mail ")) {
+      if (msg.startsWith("/tp ")) {
           const parts = msg.split(" ");
-          if (parts[1] === "list") {
-              this.broadcast("chat_message", { targetId: player.id, message: `📬 [MAILBOX] Mail #1: System Maintenance & Celebration Gift (+500 Gold, +500 EXP)` });
-          } else if (parts[1] === "claim") {
-              const currentGold = player.inventory.get("gold") || 0;
-              player.inventory.set("gold", currentGold + 500);
-              player.exp += 500;
-              this.broadcast("chat_message", { targetId: player.id, message: `🎁 [MAIL CLAIMED] Successfully claimed Mail #1: +500 Gold & +500 EXP!` });
+          const targetLoc = parts[1] ? parts[1].toLowerCase() : "village";
+          if (targetLoc === "dungeon") {
+              player.x = 2350; player.y = 450;
+          } else if (targetLoc === "arena") {
+              player.x = 1100; player.y = 360;
+          } else if (targetLoc === "tower") {
+              player.x = 1200; player.y = 360;
+          } else {
+              player.x = 600; player.y = 450;
           }
+          this.broadcast("chat_message", { targetId: player.id, message: `🌀 [TELEPORT] Teleported to ${targetLoc.toUpperCase()} Waypoint!` });
           return;
       }
       if (msg.startsWith("/duel ")) {
