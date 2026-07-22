@@ -293,6 +293,22 @@ export class GameRoom extends Room<GameState> {
           }
           return;
       }
+      if (msg.startsWith("/duel ")) {
+          const parts = msg.split(" ");
+          if (parts[1] === "invite" && parts[2]) {
+              const targetName = parts[2];
+              let targetPlayer: any = null;
+              this.state.players.forEach(p => {
+                  if (p.name === targetName) targetPlayer = p;
+              });
+              if (targetPlayer) {
+                  player.x = 1100; player.y = 360;
+                  targetPlayer.x = 1250; targetPlayer.y = 360;
+                  this.broadcast("chat_message", { targetId: "SYSTEM", message: `⚔️ [DUEL ARENA] 1v1 Match Started! ${player.name} VS ${targetPlayer.name}!` });
+              }
+          }
+          return;
+      }
       if (msg.startsWith("/guild ")) {
           const parts = msg.split(" ");
           if (parts[1] === "siege") {
@@ -391,6 +407,10 @@ export class GameRoom extends Room<GameState> {
 
              if (monster.hp <= 0) {
                 monster.hp = 0;
+                 player.killCount += 1;
+                 if (player.killCount === 10) {
+                     this.broadcast("chat_message", { targetId: player.id, message: `🏆 [ACHIEVEMENT] Unlocked Title: [SLAYER] (10 Kills)` });
+                 }
                  const expMult = this.state.isHotTime ? 2 : 1;
                  player.exp += monster.expReward * expMult;
                 

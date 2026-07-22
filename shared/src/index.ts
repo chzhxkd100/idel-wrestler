@@ -42,6 +42,7 @@ export interface IPlayerState {
   codexCount: number;
   petExp: number;
   petLevel: number;
+  killCount: number;
 }
 
 export interface IMonsterState {
