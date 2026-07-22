@@ -68,32 +68,41 @@ class GameScene extends Phaser.Scene {
   }
 
   async create() {
-    this.cameras.main.setBounds(0, 0, 2400, 600);
-    this.bgImage = this.add.tileSprite(1200, 300, 2400, 600, "background") as any;
+    this.cameras.main.setBounds(0, 0, 6000, 600);
+    this.bgImage = this.add.tileSprite(3000, 300, 6000, 600, "background") as any;
 
-    // Draw 2D Side-Scrolling Platforms & Ladders
+    // Draw 2D Side-Scrolling Platforms & Ladders Across 5 Zones (6000px)
     this.platformGraphics = this.add.graphics();
     this.platformGraphics.setDepth(5);
     
-    // Ground Floor
+    // Ground Floor Across 6000px World Map
     this.platformGraphics.fillStyle(0x33aa33, 1.0);
-    this.platformGraphics.fillRect(0, 500, 2400, 100);
+    this.platformGraphics.fillRect(0, 500, 6000, 100);
     this.platformGraphics.lineStyle(4, 0x227722, 1.0);
-    this.platformGraphics.lineBetween(0, 500, 2400, 500);
+    this.platformGraphics.lineBetween(0, 500, 6000, 500);
 
-    // Tier 2 Platforms
+    // Multi-Zone Tier 2 Platforms (Zone 1~5)
     this.platformGraphics.fillStyle(0xaa7733, 1.0);
     this.platformGraphics.fillRect(100, 360, 600, 15);
     this.platformGraphics.fillRect(1100, 360, 600, 15);
+    this.platformGraphics.fillRect(2100, 360, 600, 15);
+    this.platformGraphics.fillRect(3100, 360, 600, 15);
+    this.platformGraphics.fillRect(4100, 360, 600, 15);
 
-    // Tier 3 Platforms
+    // Multi-Zone Tier 3 Platforms
     this.platformGraphics.fillRect(300, 220, 200, 15);
     this.platformGraphics.fillRect(1300, 220, 200, 15);
+    this.platformGraphics.fillRect(2300, 220, 200, 15);
+    this.platformGraphics.fillRect(3300, 220, 200, 15);
+    this.platformGraphics.fillRect(4300, 220, 200, 15);
 
     // Ladders / Ropes
     this.platformGraphics.fillStyle(0xffcc44, 1.0);
     this.platformGraphics.fillRect(395, 220, 10, 280);
     this.platformGraphics.fillRect(1395, 220, 10, 280);
+    this.platformGraphics.fillRect(2395, 220, 10, 280);
+    this.platformGraphics.fillRect(3395, 220, 10, 280);
+    this.platformGraphics.fillRect(4395, 220, 10, 280);
 
     // Dungeon Portal Graphic (X = 2350, Y = 450)
     const portal = this.add.text(2350, 450, "🌀 PORTAL", { fontSize: '24px', color: '#00ffff', fontStyle: 'bold', stroke: '#ff00ff', strokeThickness: 4 });
@@ -102,6 +111,10 @@ class GameScene extends Phaser.Scene {
     // World Champion Golden Statue Graphic (X = 600, Y = 450)
     const statue = this.add.text(600, 450, "🗿 CHAMPION STATUE", { fontSize: '20px', color: '#ffcc00', fontStyle: 'bold', stroke: '#000000', strokeThickness: 3 });
     statue.setOrigin(0.5);
+
+    // Hall of Fame Crest Emblem Graphic (X = 800, Y = 450)
+    const hof = this.add.text(800, 450, "🏛️ HALL OF FAME", { fontSize: '20px', color: '#ff8800', fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 3 });
+    hof.setOrigin(0.5);
 
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.jumpKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.ALT);

@@ -17,7 +17,7 @@ export class GameRoom extends Room<GameState> {
     this.onMessage("move", (client, data) => {
       const player = this.state.players.get(client.sessionId);
       if (player && player.hp > 0) {
-        player.x = Math.max(0, Math.min(2400, data.x));
+        player.x = Math.max(0, Math.min(6000, data.x));
         player.lastMoveTime = Date.now();
         if (player.isAFK) player.isAFK = false;
 
@@ -355,6 +355,18 @@ export class GameRoom extends Room<GameState> {
           const gold = (player.inventory.get("gold") || 0) + 50;
           player.inventory.set("gold", gold);
           this.broadcast("chat_message", { targetId: player.id, message: `🎣 [FISHING & COOKING] Caught a Fresh Salmon! Cooked a Delicious Feast: Fully Restored HP/MP & +50 Gold!` });
+          return;
+      }
+      if (msg.startsWith("/chest ")) {
+          const parts = msg.split(" ");
+          if (parts[1] === "spawn") {
+              const chest = new Monster(`treasure_chest_${Date.now()}`, false);
+              chest.x = 800; chest.y = 450;
+              chest.maxHp = 500; chest.hp = 500;
+              chest.expReward = 500;
+              this.state.monsters.set(chest.id, chest);
+              this.broadcast("chat_message", { targetId: "SYSTEM", message: `📦 [TREASURE CHEST] A Golden Treasure Chest Spawns in Village (X: 800)! Strike it for 500 Gold & EXP!` });
+          }
           return;
       }
       if (msg.startsWith("/duel ")) {
@@ -779,22 +791,33 @@ export class GameRoom extends Room<GameState> {
       }
     });
 
-    // Spawn NPC
-    const shopNpc = new Npc("npc_shop", "Manager", 400, 300);
-    this.state.npcs.set(shopNpc.id, shopNpc);
+    // Spawn 4 Town & Field NPCs (Merchant, Quest Master, Trainer, Taxi)
+    this.state.npcs.set("npc_shop", new Npc("npc_shop", "Potion & Armor Merchant", 400, 300));
+    this.state.npcs.set("npc_quest", new Npc("npc_quest", "Quest Master", 200, 300));
+    this.state.npcs.set("npc_trainer", new Npc("npc_trainer", "Skill & Job Trainer", 600, 300));
+    this.state.npcs.set("npc_taxi", new Npc("npc_taxi", "Continental Taxi", 850, 300));
 
-    // Spawn initial monsters
-    if (this.state.monsters.size < 10 && !this.state.isNight) {
-        const m = new Monster(`monster_${Date.now()}`);
-        if (m.x >= 350 && m.x <= 450) m.x = 200; // Push out of safe zone
+    // Spawn 10 Monster Varieties across 5 World Map Zones
+    const monsterTypes = [
+        { type: "Slime", x: 1200, hp: 50 },
+        { type: "Mushroom", x: 1500, hp: 80 },
+        { type: "RibbonPig", x: 1800, hp: 120 },
+        { type: "StoneGolem", x: 2300, hp: 300 },
+        { type: "DarkElf", x: 2800, hp: 450 },
+        { type: "FireWyvern", x: 3500, hp: 700 },
+        { type: "Drake", x: 4000, hp: 1000 },
+        { type: "CrimsonOgre", x: 4800, hp: 2000 },
+        { type: "WorldBossBalrog", x: 5500, hp: 5000 }
+    ];
+
+    monsterTypes.forEach((mInfo, idx) => {
+        const m = new Monster(`zone_monster_${idx}_${Date.now()}`, mInfo.hp > 1000);
+        m.type = mInfo.type;
+        m.x = mInfo.x;
+        m.hp = mInfo.hp;
+        m.maxHp = mInfo.hp;
         this.state.monsters.set(m.id, m);
-    }
-
-    // Spawn initial boss (rarely)
-    if (Math.random() < 0.5) {
-       const boss = new Monster(`boss_${Date.now()}`, true);
-       this.state.monsters.set(boss.id, boss);
-    }
+    });
 
     // Set up game loop (server tick)
     this.setSimulationInterval((deltaTime) => this.update(deltaTime));
