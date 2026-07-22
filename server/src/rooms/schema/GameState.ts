@@ -46,6 +46,7 @@ export class Player extends Schema implements IPlayerState {
   @type("number") petExp: number;
   @type("number") petLevel: number;
   @type("number") killCount: number;
+  @type("string") dyeColor: string;
   lastMoveTime: number = Date.now();
   lastAttackTime: number = 0;
   dropThroughUntil: number = 0;
@@ -95,6 +96,7 @@ export class Player extends Schema implements IPlayerState {
     this.petExp = 0;
     this.petLevel = 1;
     this.killCount = 0;
+    this.dyeColor = "gold";
     this.inventory.set("gold", 0);
   }
 }

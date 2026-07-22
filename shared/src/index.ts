@@ -43,6 +43,7 @@ export interface IPlayerState {
   petExp: number;
   petLevel: number;
   killCount: number;
+  dyeColor: string;
 }
 
 export interface IMonsterState {

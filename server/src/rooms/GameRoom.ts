@@ -293,6 +293,20 @@ export class GameRoom extends Room<GameState> {
           }
           return;
       }
+      if (msg.startsWith("/dye ")) {
+          const parts = msg.split(" ");
+          const color = parts[1] || "gold";
+          const cost = 50;
+          const currentGold = player.inventory.get("gold") || 0;
+          if (currentGold >= cost) {
+              player.inventory.set("gold", currentGold - cost);
+              player.dyeColor = color;
+              this.broadcast("chat_message", { targetId: player.id, message: `🎨 [DYE] Changed weapon & aura dye color to ${color.toUpperCase()}!` });
+          } else {
+              this.broadcast("chat_message", { targetId: player.id, message: `[Dye] Need 50 Gold to change color.` });
+          }
+          return;
+      }
       if (msg.startsWith("/duel ")) {
           const parts = msg.split(" ");
           if (parts[1] === "invite" && parts[2]) {
