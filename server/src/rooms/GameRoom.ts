@@ -349,6 +349,14 @@ export class GameRoom extends Room<GameState> {
           this.broadcast("chat_message", { targetId: player.id, message: `🌀 [TELEPORT] Teleported to ${targetLoc.toUpperCase()} Waypoint!` });
           return;
       }
+      if (msg.startsWith("/fish")) {
+          player.hp = player.maxHp;
+          player.mp = player.maxMp;
+          const gold = (player.inventory.get("gold") || 0) + 50;
+          player.inventory.set("gold", gold);
+          this.broadcast("chat_message", { targetId: player.id, message: `🎣 [FISHING & COOKING] Caught a Fresh Salmon! Cooked a Delicious Feast: Fully Restored HP/MP & +50 Gold!` });
+          return;
+      }
       if (msg.startsWith("/duel ")) {
           const parts = msg.split(" ");
           if (parts[1] === "invite" && parts[2]) {
