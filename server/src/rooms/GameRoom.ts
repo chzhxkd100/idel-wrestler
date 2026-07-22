@@ -373,7 +373,8 @@ export class GameRoom extends Room<GameState> {
 
              if (monster.hp <= 0) {
                 monster.hp = 0;
-                player.exp += monster.expReward;
+                 const expMult = this.state.isHotTime ? 2 : 1;
+                 player.exp += monster.expReward * expMult;
                 
                 // Quest progress
                 if (player.questStatus === 1 && !monster.isBoss) {
@@ -740,6 +741,14 @@ export class GameRoom extends Room<GameState> {
         } else {
             this.state.weather = "snow";
             this.broadcast("chat_message", { targetId: "SYSTEM", message: "Snow is falling from the sky." });
+        }
+    }
+
+    // Weather Cataclysm Hazard (Lightning Bolt)
+    if (this.state.weather === "rain" || this.state.weather === "snow") {
+        if (Math.random() < 0.03) { // 3% chance per tick
+            const lx = Math.floor(Math.random() * 2300 + 50);
+            this.broadcast("chat_message", { targetId: "SYSTEM", message: `⚡ [WEATHER CATACLYSM] Lightning struck at X:${lx}!` });
         }
     }
 
