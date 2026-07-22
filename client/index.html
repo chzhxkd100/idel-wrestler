@@ -16,6 +16,7 @@
         align-items: center;
         background-color: #121212;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        overflow: hidden;
       }
       #game-container {
         width: 800px;
@@ -23,14 +24,17 @@
         box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         border-radius: 8px;
         overflow: hidden;
+        position: relative;
       }
     </style>
   </head>
   <body>
   <div id="login-screen" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #1e1e2f, #0f0f1a); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000;">
      <h1 style="color: #ffcc00; font-size: 42px; text-shadow: 0 4px 10px rgba(0,0,0,0.5); margin-bottom: 30px;">🤼‍♂️ Raising a Wrestler</h1>
-     <input type="text" id="usernameInput" placeholder="Enter Nickname..." style="padding: 14px 20px; font-size: 20px; width: 320px; border-radius: 8px; border: 2px solid #ffcc00; background: #2a2a3d; color: white; text-align: center; margin-bottom: 25px; outline: none;">
-     <button id="loginBtn" style="padding: 14px 50px; font-size: 22px; cursor: pointer; background: linear-gradient(90deg, #ffcc00, #ff8800); border: none; border-radius: 8px; color: #111; font-weight: bold; box-shadow: 0 4px 15px rgba(255, 204, 0, 0.4); transition: transform 0.2s;">Start Game</button>
+     <form id="loginForm" style="display: flex; flex-direction: column; align-items: center;" onsubmit="return false;">
+        <input type="text" id="usernameInput" placeholder="Enter Nickname..." style="padding: 14px 20px; font-size: 20px; width: 320px; border-radius: 8px; border: 2px solid #ffcc00; background: #2a2a3d; color: white; text-align: center; margin-bottom: 25px; outline: none;" autocomplete="off">
+        <button type="button" id="loginBtn" style="padding: 14px 50px; font-size: 22px; cursor: pointer; background: linear-gradient(90deg, #ffcc00, #ff8800); border: none; border-radius: 8px; color: #111; font-weight: bold; box-shadow: 0 4px 15px rgba(255, 204, 0, 0.4); transition: transform 0.2s;">Start Game</button>
+     </form>
   </div>
   
   <div id="game-container" style="display: none;"></div>

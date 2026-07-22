@@ -30,7 +30,7 @@ class GameScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, 2400, 600);
 
     // Background Image or Fallback Fill
-    if (this.textures.exists("background")) {
+    if (this.textures.exists("background") && this.textures.get("background").key !== "__MISSING") {
       this.add.tileSprite(1200, 300, 2400, 600, "background");
     } else {
       const bg = this.add.graphics();
@@ -123,7 +123,7 @@ class GameScene extends Phaser.Scene {
       }
     });
 
-    // Player Sync Handler (State Listener + Manual Iteration Dual Guarantee)
+    // Player Sync Handler
     const syncPlayer = (player: any, sessionId: string) => {
       this.createOrUpdatePlayer(player, sessionId);
       player.onChange(() => {
@@ -170,7 +170,6 @@ class GameScene extends Phaser.Scene {
     });
   }
 
-  // Dual Visual Rendering for Player (Guarantees visible character even if image texture fails)
   createOrUpdatePlayer(player: any, sessionId: string) {
     let container = this.playerContainers[sessionId];
     const isMe = (sessionId === this.room.sessionId);
@@ -179,63 +178,52 @@ class GameScene extends Phaser.Scene {
       container = this.add.container(player.x, player.y);
       container.setDepth(10);
 
-      // 1. Try Texture Sprite first, Fallback to Graphics Wrestler Model
+      // Sprite or Graphics Fallback
       if (this.textures.exists("wrestler") && this.textures.get("wrestler").key !== "__MISSING") {
         const sprite = this.add.sprite(0, -25, "wrestler");
         sprite.setScale(0.25);
-        sprite.setName("mainSprite");
         container.add(sprite);
       } else {
-        // Fallback 2D Model (Wrestler Character)
         const gfx = this.add.graphics();
-        gfx.setName("fallbackGfx");
-        // Body
         gfx.fillStyle(isMe ? 0x29b6f6 : 0xab47bc, 1.0);
         gfx.fillRect(-16, -40, 32, 40);
-        // Head
         gfx.fillStyle(0xffe0b2, 1.0);
         gfx.fillCircle(0, -50, 16);
-        // Belt
         gfx.fillStyle(0xffd54f, 1.0);
         gfx.fillRect(-16, -24, 32, 8);
-        // Eyes
         gfx.fillStyle(0x000000, 1.0);
         gfx.fillCircle(-5, -53, 3);
         gfx.fillCircle(5, -53, 3);
-
         container.add(gfx);
       }
 
-      // 2. Nametag & Level Badge
+      // Name Tag
       const nameColor = isMe ? '#00e676' : '#ffffff';
       const nameText = this.add.text(0, -80, `[Lv.${player.level}] ${player.name || "Wrestler"}`, { fontSize: '14px', color: nameColor, fontStyle: 'bold', stroke: '#000000', strokeThickness: 3 }).setOrigin(0.5);
       nameText.setName("nameText");
       container.add(nameText);
 
-      // 3. HP Bar Graphic
+      // HP Bar Graphic
       const hpGfx = this.add.graphics();
       hpGfx.setName("hpGfx");
       container.add(hpGfx);
 
       this.playerContainers[sessionId] = container;
 
-      // 4. Start Camera Follow for My Player
+      // Start Camera Follow for My Player
       if (isMe) {
         this.cameras.main.startFollow(container, true, 0.1, 0.1);
       }
     }
 
-    // Update Position
     container.x = player.x;
     container.y = player.y;
 
-    // Update Name & Level
     const nameText = container.getByName("nameText") as Phaser.GameObjects.Text;
     if (nameText) {
       nameText.setText(`[Lv.${player.level}] ${player.name || "Wrestler"}`);
     }
 
-    // Update HP Bar
     const hpGfx = container.getByName("hpGfx") as Phaser.GameObjects.Graphics;
     if (hpGfx) {
       hpGfx.clear();
@@ -251,14 +239,12 @@ class GameScene extends Phaser.Scene {
       hpGfx.strokeRect(-barWidth/2, -68, barWidth, barHeight);
     }
 
-    // Update UI Stats Header for My Player
     if (isMe) {
       this.myLevelText.setText(`LVL: ${player.level}`);
       this.myExpText.setText(`EXP: ${player.exp} / ${player.maxExp}`);
     }
   }
 
-  // Dual Visual Rendering for Monsters
   createOrUpdateMonster(monster: any, id: string) {
     let container = this.monsterContainers[id];
 
@@ -272,7 +258,6 @@ class GameScene extends Phaser.Scene {
         container.add(sprite);
       } else {
         const gfx = this.add.graphics();
-        // Slime / Monster Fallback Graphics
         gfx.fillStyle(monster.type === "Slime" ? 0x66bb6a : (monster.type === "RibbonPig" ? 0xef5350 : 0x8d6e63), 1.0);
         gfx.fillCircle(0, -20, 22);
         gfx.fillStyle(0xffffff, 1.0);
@@ -281,12 +266,10 @@ class GameScene extends Phaser.Scene {
         gfx.fillStyle(0x000000, 1.0);
         gfx.fillCircle(-7, -25, 2);
         gfx.fillCircle(7, -25, 2);
-
         container.add(gfx);
       }
 
       const typeText = this.add.text(0, -60, monster.type, { fontSize: '13px', color: '#ffeb3b', fontStyle: 'bold', stroke: '#000000', strokeThickness: 3 }).setOrigin(0.5);
-      typeText.setName("typeText");
       container.add(typeText);
 
       const hpGfx = this.add.graphics();
@@ -338,7 +321,6 @@ class GameScene extends Phaser.Scene {
       this.room.send("move", { x: myContainer.x + dx });
     }
 
-    // Attack Action
     if (Phaser.Input.Keyboard.JustDown(this.attackKey)) {
       let targetId: string | null = null;
       let minDistance = 120;
@@ -377,15 +359,27 @@ window.onload = () => {
   const loginScreen = document.getElementById("login-screen");
   const gameContainer = document.getElementById("game-container");
 
-  if (loginBtn && usernameInput && loginScreen && gameContainer) {
-    loginBtn.addEventListener("click", () => {
-      const username = usernameInput.value.trim() || "Wrestler_" + Math.floor(Math.random() * 1000);
-      (window as any).GAME_USERNAME = username;
+  const startLogin = (e?: Event) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
 
-      loginScreen.style.display = "none";
-      gameContainer.style.display = "block";
+    const username = usernameInput ? (usernameInput.value.trim() || "Wrestler_" + Math.floor(Math.random() * 1000)) : "Wrestler_Guest";
+    (window as any).GAME_USERNAME = username;
 
-      new Phaser.Game(config);
-    });
+    if (loginScreen) loginScreen.style.display = "none";
+    if (gameContainer) gameContainer.style.display = "block";
+
+    new Phaser.Game(config);
+    return false;
+  };
+
+  if (loginBtn) {
+    loginBtn.addEventListener("click", startLogin);
+  }
+  const loginForm = document.getElementById("loginForm");
+  if (loginForm) {
+    loginForm.addEventListener("submit", startLogin);
   }
 };
