@@ -318,19 +318,31 @@ export class GameRoom extends Room<GameState> {
           }
           return;
       }
-      if (msg.startsWith("/auction ")) {
+      if (msg.startsWith("/clan ")) {
+          const parts = msg.split(" ");
+          if (parts[1] === "create" && parts[2]) {
+              const clanName = parts.slice(2).join(" ");
+              const gold = player.inventory.get("gold") || 0;
+              if (gold >= 200) {
+                  player.inventory.set("gold", gold - 200);
+                  player.str += 10;
+                  player.agi += 10;
+                  this.broadcast("chat_message", { targetId: "SYSTEM", message: `⛩️ [CLAN] ${player.name} created Clan [${clanName}]! Active Martial Arts Buff (+10 STR/AGI)!` });
+              } else {
+                  this.broadcast("chat_message", { targetId: player.id, message: `[Clan] Need 200 Gold to create a Clan.` });
+              }
+          }
+          return;
+      }
+      if (msg.startsWith("/mail ")) {
           const parts = msg.split(" ");
           if (parts[1] === "list") {
-              this.broadcast("chat_message", { targetId: player.id, message: `🔨 [AUCTION HOUSE] Active Lot #1: Legendary Champion Belt (Min Bid: 500 Gold)` });
-          } else if (parts[1] === "bid" && parts[2]) {
-              const amount = parseInt(parts[2]) || 0;
-              const gold = player.inventory.get("gold") || 0;
-              if (amount > 0 && gold >= amount) {
-                  player.inventory.set("gold", gold - amount);
-                  this.broadcast("chat_message", { targetId: "SYSTEM", message: `🔨 [AUCTION BID] ${player.name} placed a HIGHEST BID of ${amount} Gold for Lot #1!` });
-              } else {
-                  this.broadcast("chat_message", { targetId: player.id, message: `[Auction] Invalid bid amount or insufficient Gold.` });
-              }
+              this.broadcast("chat_message", { targetId: player.id, message: `📬 [MAILBOX] Mail #1: System Maintenance & Celebration Gift (+500 Gold, +500 EXP)` });
+          } else if (parts[1] === "claim") {
+              const currentGold = player.inventory.get("gold") || 0;
+              player.inventory.set("gold", currentGold + 500);
+              player.exp += 500;
+              this.broadcast("chat_message", { targetId: player.id, message: `🎁 [MAIL CLAIMED] Successfully claimed Mail #1: +500 Gold & +500 EXP!` });
           }
           return;
       }
