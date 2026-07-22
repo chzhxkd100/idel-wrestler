@@ -275,6 +275,24 @@ export class GameRoom extends Room<GameState> {
           }
           return;
       }
+      if (msg.startsWith("/trade ")) {
+          const parts = msg.split(" ");
+          if (parts[1] === "invite" && parts[2]) {
+              const targetName = parts[2];
+              let targetPlayer: any = null;
+              this.state.players.forEach(p => {
+                  if (p.name === targetName) targetPlayer = p;
+              });
+              if (targetPlayer && (player.inventory.get("gold") || 0) >= 100) {
+                  player.inventory.set("gold", (player.inventory.get("gold") || 0) - 100);
+                  targetPlayer.inventory.set("gold", (targetPlayer.inventory.get("gold") || 0) + 100);
+                  this.broadcast("chat_message", { targetId: "SYSTEM", message: `🤝 [TRADE] ${player.name} traded 100 Gold to ${targetPlayer.name}!` });
+              } else {
+                  this.broadcast("chat_message", { targetId: player.id, message: `[Trade] Target not found or insufficient Gold.` });
+              }
+          }
+          return;
+      }
       if (msg.startsWith("/guild ")) {
           const parts = msg.split(" ");
           if (parts[1] === "siege") {

@@ -98,6 +98,10 @@ class GameScene extends Phaser.Scene {
     const portal = this.add.text(2350, 450, "🌀 PORTAL", { fontSize: '24px', color: '#00ffff', fontStyle: 'bold', stroke: '#ff00ff', strokeThickness: 4 });
     portal.setOrigin(0.5);
 
+    // World Champion Golden Statue Graphic (X = 600, Y = 450)
+    const statue = this.add.text(600, 450, "🗿 CHAMPION STATUE", { fontSize: '20px', color: '#ffcc00', fontStyle: 'bold', stroke: '#000000', strokeThickness: 3 });
+    statue.setOrigin(0.5);
+
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.jumpKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.ALT);
     this.attackKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
