@@ -40,6 +40,8 @@ export interface IPlayerState {
   skillLevel2: number;
   skillLevel3: number;
   codexCount: number;
+  petExp: number;
+  petLevel: number;
 }
 
 export interface IMonsterState {

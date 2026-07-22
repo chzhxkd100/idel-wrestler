@@ -277,6 +277,19 @@ export class GameRoom extends Room<GameState> {
       }
       if (msg.startsWith("/guild ")) {
           const parts = msg.split(" ");
+          if (parts[1] === "siege") {
+              player.x = 100;
+              player.y = 500;
+              const crystal = new Monster(`siege_crystal_${Date.now()}`, true, true);
+              crystal.x = 1200;
+              crystal.y = 360;
+              crystal.hp = 10000;
+              crystal.maxHp = 10000;
+              crystal.type = "guardian_stone";
+              this.state.monsters.set(crystal.id, crystal);
+              this.broadcast("chat_message", { targetId: "SYSTEM", message: `⚔️ [SIEGE WAR] ${player.guildName || player.name} entered Siege War! Destroy the Guardian Crystal!` });
+              return;
+          }
           if (parts.length >= 2) {
              const guildName = parts.slice(1).join(" ");
              player.guildName = guildName;
@@ -750,7 +763,13 @@ export class GameRoom extends Room<GameState> {
            player.combo = 0;
        }
 
-       // Auto Hunt Bot Loop
+       // Pet Auto Heal Logic
+       if (player.hasPet && player.hp > 0 && player.hp < player.maxHp * 0.4) {
+           if (Math.random() < 0.05) { // 5% chance per tick to heal
+               player.hp = Math.min(player.maxHp, player.hp + 50);
+               this.broadcast("chat_message", { targetId: player.id, message: `💖 [PET SKILL] Pet healed +50 HP!` });
+           }
+       }
        if (player.isAutoHunting && player.hp > 0) {
            let nearestM: any = null;
            let minDist = 800;
