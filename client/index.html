@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Raising a Wrestler</title>
+    <title>Raising a Wrestler MMORPG</title>
     <style>
       body, html {
         margin: 0;
@@ -14,93 +14,26 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        background-color: #111;
+        background-color: #121212;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       }
-      #app {
+      #game-container {
         width: 800px;
         height: 600px;
-      }
-      
-      .ui-overlay {
-          display: none;
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 350px;
-          background: rgba(20, 20, 30, 0.85);
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 10px;
-          padding: 20px;
-          color: white;
-          font-family: 'Inter', sans-serif;
-          box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
-          z-index: 1000;
-      }
-      .ui-overlay h2 {
-          margin-top: 0;
-          text-align: center;
-          color: #ffcc00;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-          padding-bottom: 10px;
-      }
-      .ui-row {
-          display: flex;
-          justify-content: space-between;
-          margin-bottom: 15px;
-          font-size: 18px;
-      }
-      .ui-btn {
-          width: 100%;
-          padding: 10px;
-          margin-bottom: 10px;
-          background: linear-gradient(135deg, #0077ff, #00bfff);
-          border: none;
-          border-radius: 5px;
-          color: white;
-          font-size: 16px;
-          cursor: pointer;
-      }
-      .ui-btn:active {
-          transform: scale(0.98);
-      }
-      .ui-close {
-          text-align: center;
-          margin-top: 10px;
-          color: #aaa;
-          cursor: pointer;
-          font-size: 14px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        border-radius: 8px;
+        overflow: hidden;
       }
     </style>
   </head>
   <body>
-  <div id="login-screen" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000;">
-     <h1 style="color: #fff; font-family: sans-serif;">Raising a Wrestler</h1>
-     <input type="text" id="usernameInput" placeholder="Enter your Nickname" style="padding: 10px; font-size: 20px; width: 300px; text-align: center; margin-bottom: 20px;">
-     <button id="loginBtn" style="padding: 10px 40px; font-size: 24px; cursor: pointer; background: #ffcc00; border: none; border-radius: 5px; font-weight: bold;">Start Game</button>
+  <div id="login-screen" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #1e1e2f, #0f0f1a); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000;">
+     <h1 style="color: #ffcc00; font-size: 42px; text-shadow: 0 4px 10px rgba(0,0,0,0.5); margin-bottom: 30px;">🤼‍♂️ Raising a Wrestler</h1>
+     <input type="text" id="usernameInput" placeholder="Enter Nickname..." style="padding: 14px 20px; font-size: 20px; width: 320px; border-radius: 8px; border: 2px solid #ffcc00; background: #2a2a3d; color: white; text-align: center; margin-bottom: 25px; outline: none;">
+     <button id="loginBtn" style="padding: 14px 50px; font-size: 22px; cursor: pointer; background: linear-gradient(90deg, #ffcc00, #ff8800); border: none; border-radius: 8px; color: #111; font-weight: bold; box-shadow: 0 4px 15px rgba(255, 204, 0, 0.4); transition: transform 0.2s;">Start Game</button>
   </div>
   
   <div id="game-container" style="display: none;"></div>
-  
-  <div id="chat-overlay" style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100; display: none;">
-     <input type="text" id="chatInput" style="padding: 10px; width: 300px; font-size: 16px; border: 2px solid #ccc; border-radius: 5px; background: rgba(0,0,0,0.8); color: white;" placeholder="Press Enter to send..." autocomplete="off">
-  </div>
-
-  <div id="inventory-ui" class="ui-overlay">
-      <h2>Inventory (I)</h2>
-      <div class="ui-row"><span>Gold:</span> <span id="inv-gold" style="color: #ffcc00">0</span></div>
-      <div class="ui-row"><span>Legendary Weapon:</span> <span id="inv-weapon" style="color: #00ff00">No</span></div>
-      <div class="ui-row"><span>Championship Belt:</span> <span id="inv-belt" style="color: #00ff00">No</span></div>
-      <div class="ui-close" onclick="document.getElementById('inventory-ui').style.display='none'">Close</div>
-  </div>
-
-  <div id="shop-ui" class="ui-overlay">
-      <h2>NPC Shop (P)</h2>
-      <button class="ui-btn" id="btn-buy-heal">Full Heal (50 Gold)</button>
-      <button class="ui-btn" id="btn-buy-reset">Reset Stats (500 Gold)</button>
-      <div class="ui-close" onclick="document.getElementById('shop-ui').style.display='none'">Close</div>
-  </div>
 
   <script type="module" src="/src/main.ts"></script>
 </body>
