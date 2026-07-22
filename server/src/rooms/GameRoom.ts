@@ -307,17 +307,30 @@ export class GameRoom extends Room<GameState> {
           }
           return;
       }
-      if (msg.startsWith("/raid ")) {
+      if (msg.startsWith("/fuse")) {
+          const gold = player.inventory.get("gold") || 0;
+          if (gold >= 100) {
+              player.inventory.set("gold", gold - 100);
+              player.weaponLevel += 1;
+              this.broadcast("chat_message", { targetId: "SYSTEM", message: `✨ [FUSION SUCCESS] ${player.name} synthesized weapon to Tier +${player.weaponLevel} (LEGENDARY)!` });
+          } else {
+              this.broadcast("chat_message", { targetId: player.id, message: `[Fusion] Need 100 Gold to synthesize equipment.` });
+          }
+          return;
+      }
+      if (msg.startsWith("/auction ")) {
           const parts = msg.split(" ");
-          if (parts[1] === "enter") {
-              player.x = 400; player.y = 500;
-              const raidBoss = new Monster(`commander_raid_${Date.now()}`, true, true);
-              raidBoss.x = 1200; raidBoss.y = 500;
-              raidBoss.maxHp = 50000;
-              raidBoss.hp = 50000;
-              raidBoss.expReward = 5000;
-              this.state.monsters.set(raidBoss.id, raidBoss);
-              this.broadcast("chat_message", { targetId: "SYSTEM", message: `🔥 [SERVER RAID] 100-Player Commander Raid Boss Spawns (50,000 HP)!` });
+          if (parts[1] === "list") {
+              this.broadcast("chat_message", { targetId: player.id, message: `🔨 [AUCTION HOUSE] Active Lot #1: Legendary Champion Belt (Min Bid: 500 Gold)` });
+          } else if (parts[1] === "bid" && parts[2]) {
+              const amount = parseInt(parts[2]) || 0;
+              const gold = player.inventory.get("gold") || 0;
+              if (amount > 0 && gold >= amount) {
+                  player.inventory.set("gold", gold - amount);
+                  this.broadcast("chat_message", { targetId: "SYSTEM", message: `🔨 [AUCTION BID] ${player.name} placed a HIGHEST BID of ${amount} Gold for Lot #1!` });
+              } else {
+                  this.broadcast("chat_message", { targetId: player.id, message: `[Auction] Invalid bid amount or insufficient Gold.` });
+              }
           }
           return;
       }

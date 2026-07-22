@@ -5,7 +5,7 @@
 ---
 
 ## 📌 현재 개발 상태 요약
-* **완료된 단계**: **Phase 1 ~ Phase 74 (100% 완료 및 테스트 통과 - 압도적 기록!)**
+* **완료된 단계**: **Phase 1 ~ Phase 76 (100% 완료 및 테스트 통과 - 압도적 신기록!)**
 * **최근 구현된 주요 기능**:
   * **2D 횡스크롤 메이플스토리 엔진 (Phase 46~49)**: 중력, Alt/Space 점프, 1/2/3층 다층 발판, 하향 점프, 사다리 등반, 2400px 카메라 추적, 몬스터 지형 순찰 AI
   * **파티/강화/오토 시스템 (Phase 50~52)**: `/party` 파티 결성 및 20% 보너스 EXP, `E` 키 무기 강화, `A` 키 오토 사냥 모드
@@ -19,11 +19,12 @@
   * **무한의 탑/서버 레이드 (Phase 69~70)**: `/tower enter` 층별 돌파 무한의 탑 & `/raid enter` 50,000 HP 전 서버 총사령관 100인 레이드
   * **길드 아지트/DPS 메터 (Phase 71~72)**: `/guild house` 길드 안식처 아지트 워프 & 📊 실시간 DPS/EXP/Gold 사냥 효율 통계 메터
   * **사운드 이펙트/레이더 미니맵 (Phase 73~74)**: Web Audio API 기반 공격/피격 효과음 & 📡 플레이어/타유저/몬스터 실시간 레이더 트래킹 미니맵
+  * **장비 합성/실시간 경매장 (Phase 75~76)**: `/fuse` 장비 합성 및 승급 & `/auction list`, `/auction bid <gold>` 전 서버 실시간 입찰 경매장 UI
 * **원격 저장소**: `https://github.com/chzhxkd100/idel-wrestler.git` (`main` 브랜치 동기화 됨)
 
 ---
 
-## 📋 단계별 개발 현황 (Phase 1 ~ 74 Completed)
+## 📋 단계별 개발 현황 (Phase 1 ~ 76 Completed)
 
 - `[x]` **Phase 1-45**: 기초 아키텍처, 전투, AI, 퀘스트, PVP, 길드, 탈것, 낮/밤, 월드보스, 크리티컬, 타이틀, 환생, 아우라, 펫, 날씨, 콤보 등
 - `[x]` **Phase 46-49**: 2D 횡스크롤 메이플스토리 엔진 (중력, Alt 점프, 발판, 사다리 등반, 카메라 추적, 몬스터 순찰)
@@ -37,14 +38,15 @@
 - `[x]` **Phase 67-68**: 무기 및 아우라 커스텀 염색 시스템 (`/dye`), 전 서버 실시간 랭킹 대시보드 UI
 - `[x]` **Phase 69-70**: 무한의 탑 던전 (`/tower`), 전 서버 100인 총사령관 레이드 (`/raid`)
 - `[x]` **Phase 71-72**: 길드 전용 아지트 (`/guild house`), 실시간 DPS/EXP/Gold 사냥 효율 통계 메터
-- `[x]` **Phase 73**: 플레이어 감정표현 및 타격 사운드 이펙트 (Web Audio Sound FX)
-- `[x]` **Phase 74**: 실시간 미니맵 레이더 트래킹 (📡 청색/녹색/적색 실시간 레이더 미니맵)
+- `[x]` **Phase 73-74**: 사운드 이펙트 오디오 시스템 (Web Audio API), 실시간 미니맵 레이더 트래킹
+- `[x]` **Phase 75**: 장비 합성 및 승급 시스템 (`/fuse` 합성 및 +Tier 전설 승급)
+- `[x]` **Phase 76**: 전 서버 실시간 경매장 시스템 (`/auction list`, `/auction bid <gold>` 전 서버 입찰 경쟁)
 
 ---
 
-## 🔮 향후 개발 로드맵 (Roadmap: Phase 75+)
+## 🔮 향후 개발 로드맵 (Roadmap: Phase 77+)
 
-- `[ ]` **Phase 75: 장비 합성 및 승급 시스템 (Item Synthesis & Fusion)**
-  - 동일 장비 3개를 합성하여 더 높은 등급(Uncommon -> Rare -> Epic -> Legendary)으로 승급
-- `[ ]` **Phase 76: 전 서버 통합 자유 경매장 UI (Global Auction House UI)**
-  - 최고가 입찰 방식의 실시간 입찰 경매 시스템 구현
+- `[ ]` **Phase 77: 전 서버 문파 및 문파 무공 대결 (Clan Martial Arts War)**
+  - `/clan create <name>` 문파 창설 및 전 서버 문파원 공용 무공 스킬 버프
+- `[ ]` **Phase 78: 24시간 자동 보상 수령 우편함 시스템 (Global Mailbox System)**
+  - `/mail list`, `/mail claim` 시스템 점검 및 접속 보상 자동 수령 우편함
