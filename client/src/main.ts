@@ -858,6 +858,31 @@ class GameScene extends Phaser.Scene {
         this.room.send("skill_cast", { skill: "lariat" });
     }
 
+    // Update Radar Minimap (Phase 74)
+    if (this.minimapGraphics && this.room && this.room.state) {
+        this.minimapGraphics.clear();
+        this.minimapGraphics.setScrollFactor(0);
+        this.minimapGraphics.fillStyle(0x000000, 0.6);
+        this.minimapGraphics.fillRect(10, 490, 200, 45);
+        this.minimapGraphics.lineStyle(2, 0x00ffff, 0.8);
+        this.minimapGraphics.strokeRect(10, 490, 200, 45);
+
+        this.room.state.monsters.forEach((m: any) => {
+            const mx = 10 + (m.x / 2400) * 200;
+            const my = 490 + (m.y / 600) * 45;
+            this.minimapGraphics.fillStyle(0xff2222, 1.0);
+            this.minimapGraphics.fillRect(mx - 2, my - 2, 4, 4);
+        });
+
+        this.room.state.players.forEach((p: any, id: string) => {
+            const px = 10 + (p.x / 2400) * 200;
+            const py = 490 + (p.y / 600) * 45;
+            const isMe = id === this.room.sessionId;
+            this.minimapGraphics.fillStyle(isMe ? 0x00ffff : 0x00ff00, 1.0);
+            this.minimapGraphics.fillRect(px - 2, py - 2, 4, 4);
+        });
+    }
+
     if (Phaser.Input.Keyboard.JustDown(this.attackKey)) {
       let targetId = null;
       let minDistance = 100;
