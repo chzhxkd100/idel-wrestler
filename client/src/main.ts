@@ -39,6 +39,7 @@ class GameScene extends Phaser.Scene {
   private jumpKey!: Phaser.Input.Keyboard.Key;
   private autoKey!: Phaser.Input.Keyboard.Key;
   private enhanceKey!: Phaser.Input.Keyboard.Key;
+  private skillUpKey!: Phaser.Input.Keyboard.Key;
   private isChatting: boolean = false;
   private isCameraFollowing: boolean = false;
   private comboText!: Phaser.GameObjects.Text;
@@ -118,6 +119,7 @@ class GameScene extends Phaser.Scene {
     this.healKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.H);
     this.autoKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.A);
     this.enhanceKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+    this.skillUpKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.K);
     
     // Bind Shop Buttons
     document.getElementById("btn-buy-heal")!.onclick = () => {
@@ -134,7 +136,7 @@ class GameScene extends Phaser.Scene {
     this.myStatsText = this.add.text(600, 10, "SP: 0\n1: STR 10\n2: AGI 10\n3: VIT 10", { fontSize: '20px', color: '#ffcc00', align: 'right' });
     this.myQuestText = this.add.text(600, 120, "No Quest", { fontSize: '20px', color: '#ff00ff', align: 'right' });
     this.myLeaderboardText = this.add.text(600, 200, "👑 TOP RANKERS 👑\n...", { fontSize: '20px', color: '#ffffff', align: 'right' });
-    this.add.text(10, 550, "Z:Skill | Alt:Jump | Shift:Pick | A:AutoHunt | E:EnhanceWeapon | H:QuickHeal | Q:Quest | I:Inv | P:Shop", { fontSize: '15px', color: '#fff' });
+    this.add.text(10, 550, "Z:Skill | Alt:Jump | Shift:Pick | A:Auto | E:Enhance | K:SkillUp | H:Heal | Q:Quest | I:Inv | P:Shop", { fontSize: '14px', color: '#fff' });
     this.comboText = this.add.text(400, 250, "", { fontSize: '40px', color: '#ffaa00', fontStyle: 'bold', stroke: '#000000', strokeThickness: 4 });
     this.comboText.setOrigin(0.5);
 
@@ -773,6 +775,9 @@ class GameScene extends Phaser.Scene {
       }
       if (Phaser.Input.Keyboard.JustDown(this.enhanceKey) && !this.isChatting) {
           this.room.send("enhance_item", { type: "weapon" });
+      }
+      if (Phaser.Input.Keyboard.JustDown(this.skillUpKey) && !this.isChatting) {
+          this.room.send("upgrade_skill", { skillIndex: 1 });
       }
 
     let moved = false;

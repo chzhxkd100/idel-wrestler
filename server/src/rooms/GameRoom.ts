@@ -112,7 +112,12 @@ export class GameRoom extends Room<GameState> {
                player.hasWeapon = true;
                console.log(`${player.name} obtained the Legendary Weapon!`);
                this.broadcast("weapon_effect", { targetId: player.id });
-           }
+           } else if (item.type === "card") {
+              player.codexCount += 1;
+              player.str += 2;
+              player.vit += 2;
+              this.broadcast("chat_message", { targetId: player.id, message: `🎴 [CODEX] Collected Monster Card! STR+2, VIT+2 permanent bonus! (Total Codex: ${player.codexCount})` });
+          }
            
            item.amount = 0; // mark picked up
            this.state.items.delete(id);
@@ -153,6 +158,20 @@ export class GameRoom extends Room<GameState> {
            player.isAutoHunting = !player.isAutoHunting;
            this.broadcast("chat_message", { targetId: player.id, message: `[System] Auto Hunt: ${player.isAutoHunting ? "ON" : "OFF"}` });
        }
+    });
+
+    this.onMessage("upgrade_skill", (client, data) => {
+        const player = this.state.players.get(client.sessionId);
+        if (!player || player.skp <= 0) return;
+        
+        const idx = data.skillIndex; // 1, 2, or 3
+        player.skp -= 1;
+        if (idx === 1) player.skillLevel1 += 1;
+        else if (idx === 2) player.skillLevel2 += 1;
+        else if (idx === 3) player.skillLevel3 += 1;
+
+        const newLvl = idx === 1 ? player.skillLevel1 : (idx === 2 ? player.skillLevel2 : player.skillLevel3);
+        this.broadcast("chat_message", { targetId: player.id, message: `⚡ [SKILL] Upgraded Skill #${idx} to Level +${newLvl}! (SKP left: ${player.skp})` });
     });
 
     this.onMessage("buy_heal", (client) => {
@@ -357,7 +376,14 @@ export class GameRoom extends Room<GameState> {
                    player.maxMp += 10;
                    player.mp = player.maxMp;
                    player.sp += 5; // Give SP
+                   player.skp += 1; // Give SKP
                    
+                   // Give Daily Login Bonus
+                   const currentGold = player.inventory.get("gold") || 0;
+                   player.inventory.set("gold", currentGold + 200);
+                   player.exp += 100;
+                   this.broadcast("chat_message", { targetId: player.id, message: `🎁 [DAILY LOGIN] Claimed Daily Login Bonus: +200 Gold & +100 EXP!` });
+
                    // Job Bonus
                    if (player.jobClass === "Fighter") {
                        player.str += 2; // Fighter gets extra STR

@@ -35,6 +35,11 @@ export interface IPlayerState {
   beltLevel: number;
   isAutoHunting: boolean;
   isChampion: boolean;
+  skp: number;
+  skillLevel1: number;
+  skillLevel2: number;
+  skillLevel3: number;
+  codexCount: number;
 }
 
 export interface IMonsterState {

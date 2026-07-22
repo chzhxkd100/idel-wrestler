@@ -38,6 +38,11 @@ export class Player extends Schema implements IPlayerState {
   @type("number") beltLevel: number;
   @type("boolean") isAutoHunting: boolean;
   @type("boolean") isChampion: boolean;
+  @type("number") skp: number;
+  @type("number") skillLevel1: number;
+  @type("number") skillLevel2: number;
+  @type("number") skillLevel3: number;
+  @type("number") codexCount: number;
   lastMoveTime: number = Date.now();
   lastAttackTime: number = 0;
   dropThroughUntil: number = 0;
@@ -79,6 +84,11 @@ export class Player extends Schema implements IPlayerState {
     this.beltLevel = 0;
     this.isAutoHunting = false;
     this.isChampion = false;
+    this.skp = 1;
+    this.skillLevel1 = 0;
+    this.skillLevel2 = 0;
+    this.skillLevel3 = 0;
+    this.codexCount = 0;
     this.inventory.set("gold", 0);
   }
 }
