@@ -369,6 +369,22 @@ export class GameRoom extends Room<GameState> {
           }
           return;
       }
+      if (msg.startsWith("/hidden")) {
+          player.x = 5900; player.y = 220;
+          const ancientBoss = new Monster(`hidden_boss_${Date.now()}`, true, true);
+          ancientBoss.x = 5950; ancientBoss.y = 220;
+          ancientBoss.maxHp = 10000; ancientBoss.hp = 10000;
+          ancientBoss.expReward = 2000;
+          this.state.monsters.set(ancientBoss.id, ancientBoss);
+          this.broadcast("chat_message", { targetId: player.id, message: `🌌 [SECRET HIDDEN DUNGEON] Discovered the Ancient Sanctuary! Ancient Dragon Awakes (10,000 HP)!` });
+          return;
+      }
+      if (msg.startsWith("/channel ")) {
+          const parts = msg.split(" ");
+          const chNum = parts[1] || "1";
+          this.broadcast("chat_message", { targetId: player.id, message: `📡 [CHANNEL SWITCH] Switched to World Channel ${chNum}! Connected to Channel ${chNum} Chat!` });
+          return;
+      }
       if (msg.startsWith("/duel ")) {
           const parts = msg.split(" ");
           if (parts[1] === "invite" && parts[2]) {
