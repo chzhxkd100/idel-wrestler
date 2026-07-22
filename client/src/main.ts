@@ -462,7 +462,8 @@ class GameScene extends Phaser.Scene {
               this.uiTexts[sessionId + "_name"].y = player.y - 70;
               
               let title = "Rookie";
-              if (player.level >= 50) title = "God";
+              if (player.level >= 90) title = "🎖️ GRAND HERO";
+              else if (player.level >= 50) title = "God";
               else if (player.level >= 40) title = "Mythic";
               else if (player.level >= 30) title = "Legend";
               else if (player.level >= 20) title = "Grandmaster";
