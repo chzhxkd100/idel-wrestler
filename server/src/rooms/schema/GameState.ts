@@ -16,8 +16,8 @@ export class Player extends Schema implements IPlayerState {
     super();
     this.id = id;
     this.name = name;
-    this.x = 400 + (Math.random() * 100 - 50);
-    this.y = 500; // Ground level
+    this.x = 400 + Math.floor(Math.random() * 100 - 50);
+    this.y = 500;
     this.level = 1;
     this.hp = 100;
     this.maxHp = 100;
