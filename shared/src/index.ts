@@ -30,6 +30,10 @@ export interface IPlayerState {
   vy: number;
   isGrounded: boolean;
   isClimbing: boolean;
+  partyId: string;
+  weaponLevel: number;
+  beltLevel: number;
+  isAutoHunting: boolean;
 }
 
 export interface IMonsterState {

@@ -90,19 +90,55 @@ export class GameRoom extends Room<GameState> {
               const currentAmount = player.inventory.get(item.type) || 0;
               player.inventory.set(item.type, currentAmount + item.amount);
               console.log(`${player.name} picked up ${item.amount} ${item.type}`);
-          } else if (item.type === "belt" && !player.hasBelt) {
-              player.hasBelt = true;
-              console.log(`${player.name} obtained the Championship Belt!`);
-              this.broadcast("belt_effect", { targetId: player.id });
-          } else if (item.type === "weapon" && !player.hasWeapon) {
-              player.hasWeapon = true;
-              console.log(`${player.name} obtained the Legendary Weapon!`);
-              this.broadcast("chat_message", { targetId: "SYSTEM", message: `${player.name} obtained the Legendary Weapon!` });
-          }
-          this.state.items.delete(id);
-          pickedUp = true;
+           } else if (item.type === "belt" && !player.hasBelt) {
+               player.hasBelt = true;
+               console.log(`${player.name} obtained the Championship Belt!`);
+               this.broadcast("belt_effect", { targetId: player.id });
+           } else if (item.type === "weapon" && !player.hasWeapon) {
+               player.hasWeapon = true;
+               console.log(`${player.name} obtained the Legendary Weapon!`);
+               this.broadcast("weapon_effect", { targetId: player.id });
+           }
+           
+           item.amount = 0; // mark picked up
+           this.state.items.delete(id);
+           pickedUp = true;
         }
       });
+    });
+
+    this.onMessage("enhance_item", (client, data) => {
+       const player = this.state.players.get(client.sessionId);
+       if (!player || player.hp <= 0) return;
+       
+       const type = data.type; // "weapon" or "belt"
+       const currentLevel = type === "weapon" ? player.weaponLevel : player.beltLevel;
+       const cost = (currentLevel + 1) * 100;
+       const currentGold = player.inventory.get("gold") || 0;
+       
+       if (currentGold >= cost) {
+           player.inventory.set("gold", currentGold - cost);
+           const successRate = Math.max(0.3, 1.0 - currentLevel * 0.1);
+           if (Math.random() < successRate) {
+               if (type === "weapon") player.weaponLevel += 1;
+               else player.beltLevel += 1;
+               const newLevel = type === "weapon" ? player.weaponLevel : player.beltLevel;
+               this.broadcast("chat_message", { targetId: player.id, message: `✨ [SUCCESS] ${type.toUpperCase()} enhanced to +${newLevel}!` });
+               this.broadcast("enhance_effect", { targetId: player.id });
+           } else {
+               this.broadcast("chat_message", { targetId: player.id, message: `💥 [FAIL] Enhancement failed! Gold lost.` });
+           }
+       } else {
+           this.broadcast("chat_message", { targetId: player.id, message: `[System] Need ${cost} Gold for enhancement.` });
+       }
+    });
+
+    this.onMessage("toggle_autohunt", (client) => {
+       const player = this.state.players.get(client.sessionId);
+       if (player && player.hp > 0) {
+           player.isAutoHunting = !player.isAutoHunting;
+           this.broadcast("chat_message", { targetId: player.id, message: `[System] Auto Hunt: ${player.isAutoHunting ? "ON" : "OFF"}` });
+       }
     });
 
     this.onMessage("buy_heal", (client) => {
@@ -166,6 +202,21 @@ export class GameRoom extends Room<GameState> {
               this.broadcast("chat_message", { targetId: player.id, message: `[System] You need 100 Gold for a Megaphone.` });
               return;
           }
+      }
+      if (msg.startsWith("/party ")) {
+          const parts = msg.split(" ");
+          const cmd = parts[1];
+          if (cmd === "create") {
+              player.partyId = player.name;
+              this.broadcast("chat_message", { targetId: player.id, message: `[Party] Party '${player.name}' created!` });
+          } else if (cmd === "join" && parts[2]) {
+              player.partyId = parts[2];
+              this.broadcast("chat_message", { targetId: player.id, message: `[Party] Joined party '${parts[2]}'!` });
+          } else if (cmd === "leave") {
+              player.partyId = "None";
+              this.broadcast("chat_message", { targetId: player.id, message: `[Party] Left the party.` });
+          }
+          return;
       }
       if (msg.startsWith("/guild ")) {
           const parts = msg.split(" ");
@@ -621,7 +672,35 @@ export class GameRoom extends Room<GameState> {
            player.combo = 0;
        }
 
-       // 2D Platformer Gravity & Collision Physics
+       // Auto Hunt Bot Loop
+       if (player.isAutoHunting && player.hp > 0) {
+           let nearestM: any = null;
+           let minDist = 800;
+           this.state.monsters.forEach((m) => {
+               if (m.hp > 0 && Math.abs(m.y - player.y) < 50) {
+                   const d = Math.abs(m.x - player.x);
+                   if (d < minDist) {
+                       minDist = d;
+                       nearestM = m;
+                   }
+               }
+           });
+
+           if (nearestM) {
+               if (minDist > 30) {
+                   player.x += (nearestM.x > player.x ? 1 : -1) * 5;
+               } else {
+                   // Auto attack
+                   const isCrit = Math.random() < 0.1;
+                   const dmg = (player.str * 2) + (player.weaponLevel * 15);
+                   nearestM.hp -= dmg;
+                   this.broadcast("damage", { targetId: nearestM.id, damage: dmg, isCrit, isMiss: false, jobClass: player.jobClass, combo: player.combo });
+               }
+           } else {
+               // Auto wander
+               player.x += (Math.random() > 0.5 ? 1 : -1) * 3;
+           }
+       }
        if (!player.isClimbing && !player.isGrounded) {
            player.vy += 0.8; // Gravity
            const oldY = player.y;

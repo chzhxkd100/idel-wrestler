@@ -33,6 +33,10 @@ export class Player extends Schema implements IPlayerState {
   @type("number") vy: number;
   @type("boolean") isGrounded: boolean;
   @type("boolean") isClimbing: boolean;
+  @type("string") partyId: string;
+  @type("number") weaponLevel: number;
+  @type("number") beltLevel: number;
+  @type("boolean") isAutoHunting: boolean;
   lastMoveTime: number = Date.now();
   lastAttackTime: number = 0;
   dropThroughUntil: number = 0;
@@ -69,6 +73,10 @@ export class Player extends Schema implements IPlayerState {
     this.vy = 0;
     this.isGrounded = true;
     this.isClimbing = false;
+    this.partyId = "None";
+    this.weaponLevel = 0;
+    this.beltLevel = 0;
+    this.isAutoHunting = false;
     this.inventory.set("gold", 0);
   }
 }
