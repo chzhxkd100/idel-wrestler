@@ -26,6 +26,7 @@ export interface IPlayerState {
   rebirthCount: number;
   hasPet: boolean;
   isAFK: boolean;
+  combo: number;
 }
 
 export interface IMonsterState {

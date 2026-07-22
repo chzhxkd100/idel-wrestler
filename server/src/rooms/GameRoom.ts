@@ -10,6 +10,8 @@ export class GameRoom extends Room<GameState> {
   private dayNightTimer: number = 0;
   private hotTimeTimer: number = 0;
   private weatherTimer: number = 0;
+  private firstLevel50: boolean = false;
+  private firstLevel100: boolean = false;
 
   onCreate(options: any) {
     this.setState(new GameState());
@@ -243,6 +245,15 @@ export class GameRoom extends Room<GameState> {
                    }
 
                    this.broadcast("levelup", { playerId: player.id, level: player.level });
+                   
+                   if (player.level === 50 && !this.firstLevel50) {
+                       this.firstLevel50 = true;
+                       this.broadcast("megaphone", { sender: "SERVER", msg: `🎉 ${player.name} is the FIRST to reach Level 50! 🎉` });
+                   }
+                   if (player.level === 100 && !this.firstLevel100) {
+                       this.firstLevel100 = true;
+                       this.broadcast("megaphone", { sender: "SERVER", msg: `🎉 ${player.name} is the FIRST to reach Level 100! 🎉` });
+                   }
                 }
                 
                 // Drop Item
@@ -373,9 +384,14 @@ export class GameRoom extends Room<GameState> {
               }
           }
           
+          if (!isMiss) {
+              attacker.combo += 1;
+              attacker.lastAttackTime = Date.now();
+          }
+          
           if (data.isMonster) {
               target.hp -= damage;
-              this.broadcast("damage", { targetId: data.targetId, damage, isCrit, isMiss, jobClass: attacker.jobClass });
+              this.broadcast("damage", { targetId: data.targetId, damage, isCrit, isMiss, jobClass: attacker.jobClass, combo: attacker.combo });
 
               if (target.hp <= 0) {
                   target.hp = 0;
@@ -407,6 +423,15 @@ export class GameRoom extends Room<GameState> {
                      }
 
                      this.broadcast("levelup", { playerId: attacker.id, level: attacker.level });
+
+                     if (attacker.level === 50 && !this.firstLevel50) {
+                         this.firstLevel50 = true;
+                         this.broadcast("megaphone", { sender: "SERVER", msg: `🎉 ${attacker.name} is the FIRST to reach Level 50! 🎉` });
+                     }
+                     if (attacker.level === 100 && !this.firstLevel100) {
+                         this.firstLevel100 = true;
+                         this.broadcast("megaphone", { sender: "SERVER", msg: `🎉 ${attacker.name} is the FIRST to reach Level 100! 🎉` });
+                     }
                   }
 
                   let isTargetWorldBoss = (target as Monster).isWorldBoss;
@@ -441,10 +466,10 @@ export class GameRoom extends Room<GameState> {
              }
 
              if (isMiss) {
-                 this.broadcast("damage", { targetId: data.targetId, damage: 0, isCrit: false, isMiss: true, jobClass: attacker.jobClass });
+                 this.broadcast("damage", { targetId: data.targetId, damage: 0, isCrit: false, isMiss: true, jobClass: attacker.jobClass, combo: attacker.combo });
              } else {
                  deadPlayer.hp -= damage;
-                 this.broadcast("damage", { targetId: data.targetId, damage, isCrit, isMiss: false, jobClass: attacker.jobClass });
+                 this.broadcast("damage", { targetId: data.targetId, damage, isCrit, isMiss: false, jobClass: attacker.jobClass, combo: attacker.combo });
              }
 
              if (deadPlayer.hp <= 0) {
@@ -555,6 +580,11 @@ export class GameRoom extends Room<GameState> {
        // AFK Check
        if (!player.isAFK && Date.now() - player.lastMoveTime > 60000) {
            player.isAFK = true;
+       }
+       
+       // Combo Timeout
+       if (player.combo > 0 && Date.now() - player.lastAttackTime > 3000) {
+           player.combo = 0;
        }
     });
 

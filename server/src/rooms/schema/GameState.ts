@@ -29,7 +29,9 @@ export class Player extends Schema implements IPlayerState {
   @type("number") rebirthCount: number;
   @type("boolean") hasPet: boolean;
   @type("boolean") isAFK: boolean;
+  @type("number") combo: number;
   lastMoveTime: number = Date.now();
+  lastAttackTime: number = 0;
 
   constructor(id: string, name: string) {
     super();
@@ -59,6 +61,7 @@ export class Player extends Schema implements IPlayerState {
     this.rebirthCount = 0;
     this.hasPet = false;
     this.isAFK = false;
+    this.combo = 0;
     this.inventory.set("gold", 0);
   }
 }

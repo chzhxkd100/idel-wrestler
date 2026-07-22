@@ -37,6 +37,7 @@ class GameScene extends Phaser.Scene {
   private emote6Key!: Phaser.Input.Keyboard.Key;
   private healKey!: Phaser.Input.Keyboard.Key;
   private isChatting: boolean = false;
+  private comboText!: Phaser.GameObjects.Text;
   private minimapGraphics!: Phaser.GameObjects.Graphics;
   private bgImage!: Phaser.GameObjects.Image;
   private hotTimeText!: Phaser.GameObjects.Text;
@@ -97,7 +98,9 @@ class GameScene extends Phaser.Scene {
     this.myStatsText = this.add.text(600, 10, "SP: 0\n1: STR 10\n2: AGI 10\n3: VIT 10", { fontSize: '20px', color: '#ffcc00', align: 'right' });
     this.myQuestText = this.add.text(600, 120, "No Quest", { fontSize: '20px', color: '#ff00ff', align: 'right' });
     this.myLeaderboardText = this.add.text(600, 200, "👑 TOP RANKERS 👑\n...", { fontSize: '20px', color: '#ffffff', align: 'right' });
-    this.add.text(10, 550, "Z:Skill | Shift:Pick | B:Heal | Q:Quest | F:Fighter | G:Grappler | I:Inv | P:Shop", { fontSize: '18px', color: '#fff' });
+    this.add.text(10, 550, "Z:Skill | Shift:Pick | B:Heal | H:QuickHeal | Q:Quest | F:Fighter | G:Grappler | I:Inv | P:Shop", { fontSize: '16px', color: '#fff' });
+    this.comboText = this.add.text(400, 250, "", { fontSize: '40px', color: '#ffaa00', fontStyle: 'bold', stroke: '#000000', strokeThickness: 4 });
+    this.comboText.setOrigin(0.5);
 
     this.minimapGraphics = this.add.graphics();
     this.weatherEmitter = this.add.particles(400, 0, 'skill', {
@@ -473,6 +476,13 @@ class GameScene extends Phaser.Scene {
                   this.myQuestText.setText(`Quest: Kill 5 Mobs (${player.questProgress}/5)`);
               } else if (player.questStatus === 2) {
                   this.myQuestText.setText("Quest: Completed!");
+              }
+
+              if (player.combo > 1) {
+                  this.comboText.setText(`${player.combo} COMBO!`);
+                  this.comboText.setAlpha(1);
+              } else {
+                  this.comboText.setText("");
               }
 
               if (player.inventory) {
