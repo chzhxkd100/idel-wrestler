@@ -27,6 +27,9 @@ export interface IPlayerState {
   hasPet: boolean;
   isAFK: boolean;
   combo: number;
+  vy: number;
+  isGrounded: boolean;
+  isClimbing: boolean;
 }
 
 export interface IMonsterState {

@@ -30,15 +30,19 @@ export class Player extends Schema implements IPlayerState {
   @type("boolean") hasPet: boolean;
   @type("boolean") isAFK: boolean;
   @type("number") combo: number;
+  @type("number") vy: number;
+  @type("boolean") isGrounded: boolean;
+  @type("boolean") isClimbing: boolean;
   lastMoveTime: number = Date.now();
   lastAttackTime: number = 0;
+  dropThroughUntil: number = 0;
 
   constructor(id: string, name: string) {
     super();
     this.id = id;
     this.name = name;
-    this.x = Math.random() * 800;
-    this.y = Math.random() * 600;
+    this.x = 200 + Math.random() * 200;
+    this.y = 500; // Ground floor
     this.level = 1;
     this.maxHp = 100;
     this.hp = 100;
@@ -62,6 +66,9 @@ export class Player extends Schema implements IPlayerState {
     this.hasPet = false;
     this.isAFK = false;
     this.combo = 0;
+    this.vy = 0;
+    this.isGrounded = true;
+    this.isClimbing = false;
     this.inventory.set("gold", 0);
   }
 }
@@ -86,8 +93,9 @@ export class Monster extends Schema implements IMonsterState {
     this.type = isWorldBoss ? "world_boss" : (isBoss ? "boss" : "normal");
     this.isBoss = isBoss;
     this.isWorldBoss = isWorldBoss;
-    this.x = Math.random() * 600 + 100;
-    this.y = Math.random() * 400 + 100;
+    const yPositions = [500, 360, 220];
+    this.x = Math.random() * 2200 + 100;
+    this.y = yPositions[Math.floor(Math.random() * yPositions.length)];
     
     if (isWorldBoss) {
         this.maxHp = 10000;

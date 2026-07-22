@@ -10,7 +10,7 @@ async function startBot() {
     console.log("Bot joined room:", room.roomId);
 
     setInterval(() => {
-      const myPlayer = room.state.players.get(room.sessionId);
+      const myPlayer = (room.state as any).players.get(room.sessionId);
       if (!myPlayer) return;
 
       // Random Chat Macro
@@ -20,7 +20,7 @@ async function startBot() {
 
       // Handle Quests
       if (myPlayer.questStatus === 0 || (myPlayer.questStatus === 1 && myPlayer.questProgress >= 5)) {
-          const shopNpc = room.state.npcs.get("npc_shop");
+          const shopNpc = (room.state as any).npcs.get("npc_shop");
           if (shopNpc) {
               const dist = Math.sqrt(Math.pow(myPlayer.x - shopNpc.x, 2) + Math.pow(myPlayer.y - shopNpc.y, 2));
               if (dist > 50) {
@@ -56,7 +56,7 @@ async function startBot() {
 
       // Heal if low HP
       if (myPlayer.hp < myPlayer.maxHp * 0.3) {
-          const shopNpc = room.state.npcs.get("npc_shop");
+          const shopNpc = (room.state as any).npcs.get("npc_shop");
           if (shopNpc) {
               const dist = Math.sqrt(Math.pow(myPlayer.x - shopNpc.x, 2) + Math.pow(myPlayer.y - shopNpc.y, 2));
               if (dist > 50) {
@@ -74,7 +74,7 @@ async function startBot() {
 
       // Pick up item if nearby
       let nearItem = false;
-      room.state.items.forEach((item: any, id: string) => {
+      (room.state as any).items.forEach((item: any, id: string) => {
           const dist = Math.sqrt(Math.pow(myPlayer.x - item.x, 2) + Math.pow(myPlayer.y - item.y, 2));
           if (dist < 50) {
              nearItem = true;
@@ -91,7 +91,7 @@ async function startBot() {
       let targetX = -1;
       let targetY = -1;
       
-      room.state.monsters.forEach((monster: any, id: string) => {
+      (room.state as any).monsters.forEach((monster: any, id: string) => {
           if (monster.hp > 0) {
              const dist = Math.sqrt(Math.pow(myPlayer.x - monster.x, 2) + Math.pow(myPlayer.y - monster.y, 2));
              if (dist < minDistance) {

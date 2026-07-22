@@ -17,10 +17,46 @@ export class GameRoom extends Room<GameState> {
     this.onMessage("move", (client, data) => {
       const player = this.state.players.get(client.sessionId);
       if (player && player.hp > 0) {
-        player.x = data.x;
-        player.y = data.y;
+        player.x = Math.max(0, Math.min(2400, data.x));
         player.lastMoveTime = Date.now();
         if (player.isAFK) player.isAFK = false;
+
+        // Check ladder climbing
+        const nearRope = (Math.abs(player.x - 400) < 30 || Math.abs(player.x - 1400) < 30);
+        if (data.climbUp || data.climbDown) {
+            if (nearRope) {
+                player.isClimbing = true;
+                player.isGrounded = false;
+                player.vy = 0;
+                player.x = Math.abs(player.x - 400) < 30 ? 400 : 1400; // Snap to rope
+                if (data.climbUp) player.y = Math.max(220, player.y - 8);
+                if (data.climbDown) player.y = Math.min(500, player.y + 8);
+                if (player.y >= 500) {
+                    player.isClimbing = false;
+                    player.isGrounded = true;
+                }
+            }
+        }
+      }
+    });
+
+    this.onMessage("jump", (client) => {
+      const player = this.state.players.get(client.sessionId);
+      if (player && player.hp > 0) {
+        if (player.isGrounded || player.isClimbing) {
+            player.vy = -14; // Jump velocity
+            player.isGrounded = false;
+            player.isClimbing = false;
+        }
+      }
+    });
+
+    this.onMessage("drop_down", (client) => {
+      const player = this.state.players.get(client.sessionId);
+      if (player && player.hp > 0 && player.isGrounded && player.y < 500) {
+          player.isGrounded = false;
+          player.vy = 3;
+          player.dropThroughUntil = Date.now() + 350;
       }
     });
 
@@ -584,6 +620,41 @@ export class GameRoom extends Room<GameState> {
        if (player.combo > 0 && Date.now() - player.lastAttackTime > 3000) {
            player.combo = 0;
        }
+
+       // 2D Platformer Gravity & Collision Physics
+       if (!player.isClimbing && !player.isGrounded) {
+           player.vy += 0.8; // Gravity
+           const oldY = player.y;
+           player.y += player.vy;
+
+           // Falling down platform collision check
+           if (player.vy > 0) {
+               // Ground Floor (y = 500)
+               if (player.y >= 500) {
+                   player.y = 500;
+                   player.vy = 0;
+                   player.isGrounded = true;
+               } else if (Date.now() > player.dropThroughUntil) {
+                   // Platforms Check
+                   const platforms = [
+                       { y: 360, xMin: 100, xMax: 700 },
+                       { y: 360, xMin: 1100, xMax: 1700 },
+                       { y: 220, xMin: 300, xMax: 500 },
+                       { y: 220, xMin: 1300, xMax: 1500 },
+                   ];
+                   for (const plat of platforms) {
+                       if (player.x >= plat.xMin && player.x <= plat.xMax) {
+                           if (oldY <= plat.y && player.y >= plat.y) {
+                               player.y = plat.y;
+                               player.vy = 0;
+                               player.isGrounded = true;
+                               break;
+                           }
+                       }
+                   }
+               }
+           }
+       }
     });
 
     // Respawn Monsters and Bosses
@@ -628,16 +699,15 @@ export class GameRoom extends Room<GameState> {
       });
 
       if (nearestPlayer) {
-        // Move towards player
+        // Move horizontally towards player
         const dx = nearestPlayer.x - monster.x;
-        const dy = nearestPlayer.y - monster.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
+        const dy = Math.abs(nearestPlayer.y - monster.y);
+        const dist = Math.abs(dx);
         
-        if (dist > 30) { // Attack range
-           monster.x += (dx / dist) * monster.speed;
-           monster.y += (dy / dist) * monster.speed;
-        } else {
-           // Attack player (simple cooldown mechanism could be added)
+        if (dist > 30 && dy < 60) { // Attack range on same floor level
+           monster.x += (dx > 0 ? 1 : -1) * monster.speed;
+        } else if (dist <= 40 && dy < 60) {
+           // Attack player
            if (Math.random() < 0.05) { // 5% chance per tick to hit
              if (nearestPlayer.invincibleUntil > Date.now()) {
                  // IMMUNE
@@ -658,17 +728,17 @@ export class GameRoom extends Room<GameState> {
                    nearestPlayer.hp = nearestPlayer.maxHp;
                    nearestPlayer.mp = nearestPlayer.maxMp;
                    nearestPlayer.x = 400; // Respawn near NPC
-                   nearestPlayer.y = 300;
+                   nearestPlayer.y = 500;
                    nearestPlayer.invincibleUntil = Date.now() + 3000;
                  }
              }
            }
         }
       } else {
-         // Wander
-         if (Math.random() < 0.02) {
-           monster.x += (Math.random() - 0.5) * 50;
-           monster.y += (Math.random() - 0.5) * 50;
+         // Horizontal Wander on platform
+         if (Math.random() < 0.03) {
+            monster.x += (Math.random() > 0.5 ? 1 : -1) * 20;
+            monster.x = Math.max(50, Math.min(2350, monster.x));
          }
       }
     });

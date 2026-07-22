@@ -36,9 +36,12 @@ class GameScene extends Phaser.Scene {
   private emote5Key!: Phaser.Input.Keyboard.Key;
   private emote6Key!: Phaser.Input.Keyboard.Key;
   private healKey!: Phaser.Input.Keyboard.Key;
+  private jumpKey!: Phaser.Input.Keyboard.Key;
   private isChatting: boolean = false;
+  private isCameraFollowing: boolean = false;
   private comboText!: Phaser.GameObjects.Text;
   private minimapGraphics!: Phaser.GameObjects.Graphics;
+  private platformGraphics!: Phaser.GameObjects.Graphics;
   private bgImage!: Phaser.GameObjects.Image;
   private hotTimeText!: Phaser.GameObjects.Text;
   private auras: { [id: string]: Phaser.GameObjects.Particles.ParticleEmitter } = {};
@@ -61,10 +64,35 @@ class GameScene extends Phaser.Scene {
   }
 
   async create() {
-    this.bgImage = this.add.image(400, 300, "background");
-    this.bgImage.setDisplaySize(800, 600);
+    this.cameras.main.setBounds(0, 0, 2400, 600);
+    this.bgImage = this.add.tileSprite(1200, 300, 2400, 600, "background") as any;
+
+    // Draw 2D Side-Scrolling Platforms & Ladders
+    this.platformGraphics = this.add.graphics();
+    this.platformGraphics.setDepth(5);
+    
+    // Ground Floor
+    this.platformGraphics.fillStyle(0x33aa33, 1.0);
+    this.platformGraphics.fillRect(0, 500, 2400, 100);
+    this.platformGraphics.lineStyle(4, 0x227722, 1.0);
+    this.platformGraphics.lineBetween(0, 500, 2400, 500);
+
+    // Tier 2 Platforms
+    this.platformGraphics.fillStyle(0xaa7733, 1.0);
+    this.platformGraphics.fillRect(100, 360, 600, 15);
+    this.platformGraphics.fillRect(1100, 360, 600, 15);
+
+    // Tier 3 Platforms
+    this.platformGraphics.fillRect(300, 220, 200, 15);
+    this.platformGraphics.fillRect(1300, 220, 200, 15);
+
+    // Ladders / Ropes
+    this.platformGraphics.fillStyle(0xffcc44, 1.0);
+    this.platformGraphics.fillRect(395, 220, 10, 280);
+    this.platformGraphics.fillRect(1395, 220, 10, 280);
 
     this.cursors = this.input.keyboard!.createCursorKeys();
+    this.jumpKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.ALT);
     this.attackKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.pickupKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
     this.skillKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
@@ -366,8 +394,16 @@ class GameScene extends Phaser.Scene {
         }
 
         player.onChange(() => {
-          sprite.x = player.x;
-          sprite.y = player.y;
+          const sprite = this.players[sessionId];
+          if (sprite) {
+              sprite.x = player.x;
+              sprite.y = player.y;
+              
+              if (sessionId === this.room.sessionId && !this.isCameraFollowing) {
+                  this.cameras.main.startFollow(sprite, true, 0.1, 0.1);
+                  this.isCameraFollowing = true;
+              }
+          }
           
           if (player.invincibleUntil > Date.now()) {
               sprite.alpha = 0.5; // blinking effect could be added, just translucent for now
@@ -724,9 +760,8 @@ class GameScene extends Phaser.Scene {
 
     let moved = false;
     let dx = 0;
-    let dy = 0;
 
-    let speed = 5;
+    let speed = 6;
     const myState = this.room.state.players.get(this.room.sessionId);
     if (myState && myState.isMounted) {
         speed = 10;
@@ -734,17 +769,26 @@ class GameScene extends Phaser.Scene {
 
     if (this.cursors.left.isDown) { dx -= speed; moved = true; }
     if (this.cursors.right.isDown) { dx += speed; moved = true; }
-    if (this.cursors.up.isDown) { dy -= speed; moved = true; }
-    if (this.cursors.down.isDown) { dy += speed; moved = true; }
 
-    if (moved) {
-      const mySprite = this.players[this.room.sessionId];
-      if (mySprite) {
-        this.room.send("move", {
-          x: mySprite.x + dx,
-          y: mySprite.y + dy
-        });
-      }
+    const isDownPressed = this.cursors.down.isDown;
+    const isUpPressed = this.cursors.up.isDown;
+    const isJumpPressed = Phaser.Input.Keyboard.JustDown(this.jumpKey);
+
+    if (isDownPressed && isJumpPressed) {
+        this.room.send("drop_down");
+    } else if (isJumpPressed) {
+        this.room.send("jump");
+    }
+
+    const mySprite = this.players[this.room.sessionId];
+    if (mySprite) {
+        if (moved || isUpPressed || isDownPressed) {
+            this.room.send("move", {
+                x: mySprite.x + dx,
+                climbUp: isUpPressed,
+                climbDown: isDownPressed
+            });
+        }
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.pickupKey)) {
