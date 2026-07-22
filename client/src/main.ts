@@ -51,6 +51,7 @@ class GameScene extends Phaser.Scene {
   private auras: { [id: string]: Phaser.GameObjects.Particles.ParticleEmitter } = {};
   private pets: { [id: string]: Phaser.GameObjects.Sprite } = {};
   private weatherEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
+  private isConnected: boolean = false;
 
   constructor() {
     super("GameScene");
@@ -67,11 +68,12 @@ class GameScene extends Phaser.Scene {
     this.load.image("npc", "assets/npc.png");
   }
 
-  async create() {
+  create() {
+    // 1. Initialize Camera and Background Graphics First
     this.cameras.main.setBounds(0, 0, 6000, 600);
     this.bgImage = this.add.tileSprite(3000, 300, 6000, 600, "background") as any;
 
-    // Draw 2D Side-Scrolling Platforms & Ladders Across 5 Zones (6000px)
+    // 2. Draw 2D Side-Scrolling Platforms & Ladders Across 5 Zones (6000px)
     this.platformGraphics = this.add.graphics();
     this.platformGraphics.setDepth(5);
     
@@ -116,6 +118,7 @@ class GameScene extends Phaser.Scene {
     const hof = this.add.text(800, 450, "🏛️ HALL OF FAME", { fontSize: '20px', color: '#ff8800', fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 3 });
     hof.setOrigin(0.5);
 
+    // 3. Initialize Input Keyboard Keys
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.jumpKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.ALT);
     this.attackKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
@@ -138,31 +141,26 @@ class GameScene extends Phaser.Scene {
     this.autoKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.A);
     this.enhanceKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.E);
     this.skillUpKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.K);
-    
-    // Bind Shop Buttons
-    document.getElementById("btn-buy-heal")!.onclick = () => {
-        this.room.send("buy_shop_item", { item: "heal" });
-    };
-    document.getElementById("btn-buy-reset")!.onclick = () => {
-        this.room.send("buy_shop_item", { item: "reset" });
-    };
 
-    this.myLevelText = this.add.text(10, 10, "LVL: 1", { fontSize: '24px', color: '#fff' });
-    this.myExpText = this.add.text(10, 40, "EXP: 0/100", { fontSize: '24px', color: '#fff' });
-    this.myMpText = this.add.text(10, 70, "MP: 50/50", { fontSize: '24px', color: '#00ffff' });
-    this.myGoldText = this.add.text(10, 100, "GOLD: 0", { fontSize: '24px', color: '#ffff00' });
-    this.myStatsText = this.add.text(600, 10, "SP: 0\n1: STR 10\n2: AGI 10\n3: VIT 10", { fontSize: '20px', color: '#ffcc00', align: 'right' });
-    this.myQuestText = this.add.text(600, 120, "No Quest", { fontSize: '20px', color: '#ff00ff', align: 'right' });
-    this.myLeaderboardText = this.add.text(600, 200, "👑 TOP RANKERS 👑\n...", { fontSize: '20px', color: '#ffffff', align: 'right' });
-    this.add.text(10, 550, "Z:Skill | Alt:Jump | Shift:Pick | A:Auto | E:Enhance | K:SkillUp | H:Heal | Q:Quest | I:Inv | P:Shop", { fontSize: '14px', color: '#fff' });
-    this.comboText = this.add.text(400, 250, "", { fontSize: '40px', color: '#ffaa00', fontStyle: 'bold', stroke: '#000000', strokeThickness: 4 });
+    // 4. Initialize UI Texts (Fixed to Camera View)
+    this.myLevelText = this.add.text(10, 10, "LVL: 1", { fontSize: '24px', color: '#fff' }).setScrollFactor(0);
+    this.myExpText = this.add.text(10, 40, "EXP: 0/100", { fontSize: '24px', color: '#fff' }).setScrollFactor(0);
+    this.myMpText = this.add.text(10, 70, "MP: 50/50", { fontSize: '24px', color: '#00ffff' }).setScrollFactor(0);
+    this.myGoldText = this.add.text(10, 100, "GOLD: 0", { fontSize: '24px', color: '#ffff00' }).setScrollFactor(0);
+    this.myStatsText = this.add.text(790, 10, "SP: 0\n1: STR 10\n2: AGI 10\n3: VIT 10", { fontSize: '18px', color: '#ffcc00', align: 'right' }).setOrigin(1, 0).setScrollFactor(0);
+    this.myQuestText = this.add.text(790, 110, "No Quest", { fontSize: '18px', color: '#ff00ff', align: 'right' }).setOrigin(1, 0).setScrollFactor(0);
+    this.myLeaderboardText = this.add.text(790, 180, "👑 TOP RANKERS 👑\n...", { fontSize: '16px', color: '#ffffff', align: 'right' }).setOrigin(1, 0).setScrollFactor(0);
+    this.add.text(10, 570, "Z:Skill | Alt:Jump | Space:Attack | Shift:Pick | A:Auto | E:Enhance | K:SkillUp | H:Heal | Q:Quest | I:Inv | P:Shop", { fontSize: '13px', color: '#fff', backgroundColor: '#00000088' }).setScrollFactor(0);
+    
+    this.comboText = this.add.text(400, 250, "", { fontSize: '40px', color: '#ffaa00', fontStyle: 'bold', stroke: '#000000', strokeThickness: 4 }).setScrollFactor(0);
     this.comboText.setOrigin(0.5);
 
-    this.dpsText = this.add.text(400, 25, "📊 DPS: 350 | EXP/m: 1,200 | GOLD/m: 600", { fontSize: '16px', color: '#00ffcc', fontStyle: 'bold', stroke: '#000000', strokeThickness: 3 });
+    this.dpsText = this.add.text(400, 20, "📊 DPS: -- | EXP/m: -- | GOLD/m: --", { fontSize: '16px', color: '#00ffcc', fontStyle: 'bold', stroke: '#000000', strokeThickness: 3 }).setScrollFactor(0);
     this.dpsText.setOrigin(0.5);
-    this.dpsText.setScrollFactor(0);
 
+    // 5. Minimap Graphics & Particles
     this.minimapGraphics = this.add.graphics();
+    this.minimapGraphics.setScrollFactor(0);
     this.weatherEmitter = this.add.particles(400, 0, 'skill', {
         speedY: { min: 100, max: 200 },
         x: { min: 0, max: 800 },
@@ -170,13 +168,41 @@ class GameScene extends Phaser.Scene {
         scale: { start: 0.1, end: 0 },
         quantity: 0
     });
-    this.weatherEmitter.setDepth(100); // Draw weather on top
+    this.weatherEmitter.setDepth(100);
 
+    // 6. Bind Shop DOM Buttons
+    const btnHeal = document.getElementById("btn-buy-heal");
+    if (btnHeal) {
+        btnHeal.onclick = () => {
+            if (this.room) this.room.send("buy_shop_item", { item: "heal" });
+        };
+    }
+    const btnReset = document.getElementById("btn-buy-reset");
+    if (btnReset) {
+        btnReset.onclick = () => {
+            if (this.room) this.room.send("buy_shop_item", { item: "reset" });
+        };
+    }
+
+    // 7. Connect to Colyseus Server Asynchronously
+    this.connectServer();
+  }
+
+  async connectServer() {
     try {
       this.myUsername = (window as any).GAME_USERNAME || "Guest";
       this.room = await client.joinOrCreate("game", { username: this.myUsername });
-      console.log("Joined room:", this.room.roomId);
+      this.isConnected = true;
+      console.log("Joined room successfully:", this.room.roomId);
 
+      this.setupRoomEvents();
+    } catch (e) {
+      console.error("Join error:", e);
+      this.add.text(400, 300, "Connection Failed!\nMake sure server is running on localhost:2567", { fontSize: '24px', color: '#ff0000', align: 'center', stroke: '#000000', strokeThickness: 4 }).setOrigin(0.5).setScrollFactor(0);
+    }
+  }
+
+  setupRoomEvents() {
       this.room.onMessage("damage", (message) => {
         const { targetId, damage, isCrit, isMiss, jobClass } = message;
         let target = this.players[targetId] || this.monsters[targetId];
@@ -191,7 +217,7 @@ class GameScene extends Phaser.Scene {
                  onComplete: () => dmgText.destroy()
              });
           } else {
-              let color = '#ff0000'; // Default monster/normal color
+              let color = '#ff0000';
               if (jobClass === "Fighter") color = '#ff3333';
               else if (jobClass === "Grappler") color = '#bb33ff';
 
@@ -264,7 +290,7 @@ class GameScene extends Phaser.Scene {
 
       this.room.onMessage("kill_log", (message) => {
          const { killer, victim } = message;
-         const logText = this.add.text(400, 200, `[${killer}] killed [${victim}]!`, { fontSize: '32px', color: '#ff0000', fontStyle: 'bold', backgroundColor: '#00000088' });
+         const logText = this.add.text(400, 200, `[${killer}] killed [${victim}]!`, { fontSize: '32px', color: '#ff0000', fontStyle: 'bold', backgroundColor: '#00000088' }).setScrollFactor(0);
          logText.setOrigin(0.5);
          this.tweens.add({
              targets: logText,
@@ -293,7 +319,7 @@ class GameScene extends Phaser.Scene {
 
       this.room.onMessage("megaphone", (message) => {
          const { sender, msg } = message;
-         const effect = this.add.text(400, 300, `[확성기] ${sender}:\n${msg}`, { fontSize: '48px', color: '#ffff00', fontStyle: 'bold', stroke: '#000000', strokeThickness: 5, align: 'center' });
+         const effect = this.add.text(400, 300, `[확성기] ${sender}:\n${msg}`, { fontSize: '48px', color: '#ffff00', fontStyle: 'bold', stroke: '#000000', strokeThickness: 5, align: 'center' }).setScrollFactor(0);
          effect.setOrigin(0.5);
          effect.setDepth(200);
          this.tweens.add({
@@ -326,7 +352,7 @@ class GameScene extends Phaser.Scene {
         const { playerId, level } = message;
         if (playerId === this.room.sessionId) {
             this.myLevelText.setText(`LVL: ${level}`);
-            const lvlUpText = this.add.text(400, 300, "LEVEL UP!", { fontSize: '48px', color: '#ffff00', fontStyle: 'bold' });
+            const lvlUpText = this.add.text(400, 300, "LEVEL UP!", { fontSize: '48px', color: '#ffff00', fontStyle: 'bold' }).setScrollFactor(0);
             lvlUpText.setOrigin(0.5);
             this.tweens.add({
                 targets: lvlUpText,
@@ -343,19 +369,19 @@ class GameScene extends Phaser.Scene {
              if (change.field === "isNight") {
                  if (change.value) {
                      this.bgImage.setTint(0x333355);
-                     const effect = this.add.text(400, 300, "NIGHT HAS FALLEN", { fontSize: '48px', color: '#ff0000', fontStyle: 'bold' });
+                     const effect = this.add.text(400, 300, "NIGHT HAS FALLEN", { fontSize: '48px', color: '#ff0000', fontStyle: 'bold' }).setScrollFactor(0);
                      effect.setOrigin(0.5);
                      this.tweens.add({ targets: effect, alpha: 0, duration: 3000, onComplete: () => effect.destroy() });
                  } else {
                      this.bgImage.clearTint();
-                     const effect = this.add.text(400, 300, "DAY HAS BROKEN", { fontSize: '48px', color: '#ffff00', fontStyle: 'bold' });
+                     const effect = this.add.text(400, 300, "DAY HAS BROKEN", { fontSize: '48px', color: '#ffff00', fontStyle: 'bold' }).setScrollFactor(0);
                      effect.setOrigin(0.5);
                      this.tweens.add({ targets: effect, alpha: 0, duration: 3000, onComplete: () => effect.destroy() });
                  }
              }
              if (change.field === "isHotTime") {
                  if (change.value) {
-                     this.hotTimeText = this.add.text(400, 50, "🔥 HOT TIME 2X EXP 🔥", { fontSize: '32px', color: '#ff0000', fontStyle: 'bold' });
+                     this.hotTimeText = this.add.text(400, 50, "🔥 HOT TIME 2X EXP 🔥", { fontSize: '32px', color: '#ff0000', fontStyle: 'bold' }).setScrollFactor(0);
                      this.hotTimeText.setOrigin(0.5);
                      this.tweens.add({ targets: this.hotTimeText, scale: 1.2, yoyo: true, repeat: -1, duration: 500 });
                  } else {
@@ -428,28 +454,36 @@ class GameScene extends Phaser.Scene {
             this.uiTexts[sessionId + "_weapon"] = weaponIcon as any;
         }
 
+        // Camera follow my player
+        if (sessionId === this.room.sessionId) {
+            this.cameras.main.startFollow(sprite, true, 0.1, 0.1);
+            this.isCameraFollowing = true;
+        }
+
         player.onChange(() => {
-          const sprite = this.players[sessionId];
-          if (sprite) {
-              sprite.x = player.x;
-              sprite.y = player.y;
+          const pSprite = this.players[sessionId];
+          if (pSprite) {
+              pSprite.x = player.x;
+              pSprite.y = player.y;
               
               if (sessionId === this.room.sessionId && !this.isCameraFollowing) {
-                  this.cameras.main.startFollow(sprite, true, 0.1, 0.1);
+                  this.cameras.main.startFollow(pSprite, true, 0.1, 0.1);
                   this.isCameraFollowing = true;
               }
           }
           
           if (player.invincibleUntil > Date.now()) {
-              sprite.alpha = 0.5; // blinking effect could be added, just translucent for now
+              if (pSprite) pSprite.alpha = 0.5;
           } else {
-              sprite.alpha = 1.0;
+              if (pSprite) pSprite.alpha = 1.0;
           }
 
-          if (player.isMounted) {
-              sprite.setTint(0x88ccff);
-          } else {
-              sprite.clearTint();
+          if (pSprite) {
+              if (player.isMounted) {
+                  pSprite.setTint(0x88ccff);
+              } else {
+                  pSprite.clearTint();
+              }
           }
 
           if (this.uiTexts[sessionId]) {
@@ -524,7 +558,6 @@ class GameScene extends Phaser.Scene {
                   this.pets[sessionId].setScale(0.15);
                   this.pets[sessionId].setTint(0xffcccc);
               }
-              // Lerp pet to player
               const targetX = player.x - 30;
               const targetY = player.y + 20;
               this.pets[sessionId].x += (targetX - this.pets[sessionId].x) * 0.1;
@@ -560,12 +593,14 @@ class GameScene extends Phaser.Scene {
               if (player.inventory) {
                  const gold = player.inventory.gold || 0;
                  this.myGoldText.setText(`GOLD: ${gold}`);
-                 // Sync inv UI if open
                  const invUi = document.getElementById("inventory-ui");
                  if (invUi && invUi.style.display === "block") {
-                     document.getElementById("inv-gold")!.innerText = gold.toString();
-                     document.getElementById("inv-weapon")!.innerText = player.hasWeapon ? "Yes" : "No";
-                     document.getElementById("inv-belt")!.innerText = player.hasBelt ? "Yes" : "No";
+                     const goldElem = document.getElementById("inv-gold");
+                     if (goldElem) goldElem.innerText = gold.toString();
+                     const wpnElem = document.getElementById("inv-weapon");
+                     if (wpnElem) wpnElem.innerText = player.hasWeapon ? "Yes" : "No";
+                     const beltElem = document.getElementById("inv-belt");
+                     if (beltElem) beltElem.innerText = player.hasBelt ? "Yes" : "No";
                  }
               }
           }
@@ -581,6 +616,10 @@ class GameScene extends Phaser.Scene {
         if (this.uiTexts[sessionId]) {
           this.uiTexts[sessionId].destroy();
           delete this.uiTexts[sessionId];
+        }
+        if (this.uiTexts[sessionId + "_name"]) {
+          this.uiTexts[sessionId + "_name"].destroy();
+          delete this.uiTexts[sessionId + "_name"];
         }
         if (this.auras[sessionId]) {
           this.auras[sessionId].destroy();
@@ -637,7 +676,6 @@ class GameScene extends Phaser.Scene {
         sprite.setScale(item.type === "belt" ? 0.5 : 0.2);
         this.items[id] = sprite;
 
-        // Bounce effect
         this.tweens.add({
            targets: sprite,
            y: item.y - 15,
@@ -658,7 +696,7 @@ class GameScene extends Phaser.Scene {
         const sprite = this.add.sprite(npc.x, npc.y, "npc");
         sprite.setScale(0.4);
         this.npcs[id] = sprite;
-        this.add.text(npc.x - 40, npc.y - 60, `[${npc.name}]\n!`, { fontSize: '18px', color: '#00ff00', fontStyle: 'bold', align: 'center' });
+        this.add.text(npc.x, npc.y - 60, `[${npc.name}]\n!`, { fontSize: '16px', color: '#00ff00', fontStyle: 'bold', align: 'center' }).setOrigin(0.5);
       });
 
       this.room.state.npcs.onRemove((npc: any, id: string) => {
@@ -667,14 +705,10 @@ class GameScene extends Phaser.Scene {
           delete this.npcs[id];
         }
       });
-
-    } catch (e) {
-      console.error("Join error:", e);
-    }
   }
 
   updateLeaderboard() {
-      if (!this.room || !this.room.state) return;
+      if (!this.isConnected || !this.room || !this.room.state) return;
       const playersList: any[] = [];
       this.room.state.players.forEach((p: any) => playersList.push(p));
       playersList.sort((a, b) => b.level === a.level ? b.exp - a.exp : b.level - a.level);
@@ -687,39 +721,41 @@ class GameScene extends Phaser.Scene {
   }
 
   drawMinimap() {
+      if (!this.minimapGraphics) return;
       this.minimapGraphics.clear();
-      const mapWidth = 800;
-      const mapHeight = 600;
-      const miniWidth = 150;
-      const miniHeight = 110;
-      const startX = 800 - miniWidth - 10;
-      const startY = 600 - miniHeight - 30; // Above keyboard hints
+      this.minimapGraphics.setScrollFactor(0);
+
+      const miniWidth = 200;
+      const miniHeight = 45;
+      const startX = 10;
+      const startY = 490;
 
       // Draw minimap background
-      this.minimapGraphics.fillStyle(0x000000, 0.5);
+      this.minimapGraphics.fillStyle(0x000000, 0.6);
       this.minimapGraphics.fillRect(startX, startY, miniWidth, miniHeight);
-      this.minimapGraphics.lineStyle(2, 0xffffff, 0.8);
+      this.minimapGraphics.lineStyle(2, 0x00ffff, 0.8);
       this.minimapGraphics.strokeRect(startX, startY, miniWidth, miniHeight);
 
-      if (!this.room || !this.room.state) return;
-
-      // Draw players
-      this.room.state.players.forEach((p: any, id: string) => {
-          if (p.hp > 0) {
-              const mx = startX + (p.x / mapWidth) * miniWidth;
-              const my = startY + (p.y / mapHeight) * miniHeight;
-              this.minimapGraphics.fillStyle(id === this.room.sessionId ? 0xffffff : 0x0000ff, 1);
-              this.minimapGraphics.fillCircle(mx, my, 3);
-          }
-      });
+      if (!this.isConnected || !this.room || !this.room.state) return;
 
       // Draw monsters
       this.room.state.monsters.forEach((m: any) => {
           if (m.hp > 0) {
-              const mx = startX + (m.x / mapWidth) * miniWidth;
-              const my = startY + (m.y / mapHeight) * miniHeight;
+              const mx = startX + (m.x / 6000) * miniWidth;
+              const my = startY + (m.y / 600) * miniHeight;
               this.minimapGraphics.fillStyle(m.isBoss ? 0xff0000 : 0xffaa00, 1);
-              this.minimapGraphics.fillCircle(mx, my, m.isBoss ? 5 : 2);
+              this.minimapGraphics.fillRect(mx - 2, my - 2, 4, 4);
+          }
+      });
+
+      // Draw players
+      this.room.state.players.forEach((p: any, id: string) => {
+          if (p.hp > 0) {
+              const px = startX + (p.x / 6000) * miniWidth;
+              const py = startY + (p.y / 600) * miniHeight;
+              const isMe = id === this.room.sessionId;
+              this.minimapGraphics.fillStyle(isMe ? 0x00ffff : 0x00ff00, 1);
+              this.minimapGraphics.fillRect(px - 2, py - 2, 4, 4);
           }
       });
   }
@@ -727,7 +763,7 @@ class GameScene extends Phaser.Scene {
   update() {
     this.drawMinimap();
 
-    if (!this.room) return;
+    if (!this.isConnected || !this.room || !this.room.state) return;
 
     if (Phaser.Input.Keyboard.JustDown(this.fighterKey)) {
         this.room.send("change_job", { job: "Fighter" });
@@ -739,73 +775,76 @@ class GameScene extends Phaser.Scene {
     if (Phaser.Input.Keyboard.JustDown(this.enterKey)) {
         if (!this.isChatting) {
             this.isChatting = true;
-            document.getElementById("chat-overlay")!.style.display = "block";
+            const chatOverlay = document.getElementById("chat-overlay");
+            if (chatOverlay) chatOverlay.style.display = "block";
             const chatInput = document.getElementById("chatInput") as HTMLInputElement;
-            chatInput.focus();
+            if (chatInput) chatInput.focus();
         } else {
             const chatInput = document.getElementById("chatInput") as HTMLInputElement;
-            if (chatInput.value.trim() !== "") {
+            if (chatInput && chatInput.value.trim() !== "") {
                 this.room.send("chat", { message: chatInput.value });
                 chatInput.value = "";
             }
-            chatInput.blur();
-            document.getElementById("chat-overlay")!.style.display = "none";
+            if (chatInput) chatInput.blur();
+            const chatOverlay = document.getElementById("chat-overlay");
+            if (chatOverlay) chatOverlay.style.display = "none";
             this.isChatting = false;
         }
     }
 
     if (this.isChatting) return;
 
-      if (Phaser.Input.Keyboard.JustDown(this.invKey) && !this.isChatting) {
-          const invUi = document.getElementById("inventory-ui");
-          if (invUi) {
-              if (invUi.style.display === "none" || invUi.style.display === "") {
-                  invUi.style.display = "block";
-                  // Sync data
-                  const myState = this.room.state.players.get(this.room.sessionId);
-                  if (myState) {
-                      document.getElementById("inv-gold")!.innerText = myState.inventory.gold || 0;
-                      document.getElementById("inv-weapon")!.innerText = myState.hasWeapon ? "Yes" : "No";
-                      document.getElementById("inv-belt")!.innerText = myState.hasBelt ? "Yes" : "No";
-                  }
-              } else {
-                  invUi.style.display = "none";
-              }
-          }
-      }
+    if (Phaser.Input.Keyboard.JustDown(this.invKey)) {
+        const invUi = document.getElementById("inventory-ui");
+        if (invUi) {
+            if (invUi.style.display === "none" || invUi.style.display === "") {
+                invUi.style.display = "block";
+                const myState = this.room.state.players.get(this.room.sessionId);
+                if (myState) {
+                    const gElem = document.getElementById("inv-gold");
+                    if (gElem) gElem.innerText = (myState.inventory.gold || 0).toString();
+                    const wElem = document.getElementById("inv-weapon");
+                    if (wElem) wElem.innerText = myState.hasWeapon ? "Yes" : "No";
+                    const bElem = document.getElementById("inv-belt");
+                    if (bElem) bElem.innerText = myState.hasBelt ? "Yes" : "No";
+                }
+            } else {
+                invUi.style.display = "none";
+            }
+        }
+    }
 
-      if (Phaser.Input.Keyboard.JustDown(this.shopKey) && !this.isChatting) {
-          const shopUi = document.getElementById("shop-ui");
-          if (shopUi) {
-              shopUi.style.display = (shopUi.style.display === "none" || shopUi.style.display === "") ? "block" : "none";
-          }
-      }
+    if (Phaser.Input.Keyboard.JustDown(this.shopKey)) {
+        const shopUi = document.getElementById("shop-ui");
+        if (shopUi) {
+            shopUi.style.display = (shopUi.style.display === "none" || shopUi.style.display === "") ? "block" : "none";
+        }
+    }
 
-      if (Phaser.Input.Keyboard.JustDown(this.emote4Key) && !this.isChatting) {
-          this.room.send("chat_message", "😀");
-      }
-      if (Phaser.Input.Keyboard.JustDown(this.emote5Key) && !this.isChatting) {
-          this.room.send("chat_message", "😠");
-      }
-      if (Phaser.Input.Keyboard.JustDown(this.emote6Key) && !this.isChatting) {
-          this.room.send("chat_message", "😭");
-      }
-      if (Phaser.Input.Keyboard.JustDown(this.healKey) && !this.isChatting) {
-          this.room.send("quick_heal");
-      }
-      if (Phaser.Input.Keyboard.JustDown(this.autoKey) && !this.isChatting) {
-          this.room.send("toggle_autohunt");
-      }
-      if (Phaser.Input.Keyboard.JustDown(this.enhanceKey) && !this.isChatting) {
-          this.room.send("enhance_item", { type: "weapon" });
-      }
-      if (Phaser.Input.Keyboard.JustDown(this.skillUpKey) && !this.isChatting) {
-          this.room.send("upgrade_skill", { skillIndex: 1 });
-      }
+    if (Phaser.Input.Keyboard.JustDown(this.emote4Key)) {
+        this.room.send("chat_message", "😀");
+    }
+    if (Phaser.Input.Keyboard.JustDown(this.emote5Key)) {
+        this.room.send("chat_message", "😠");
+    }
+    if (Phaser.Input.Keyboard.JustDown(this.emote6Key)) {
+        this.room.send("chat_message", "😭");
+    }
+    if (Phaser.Input.Keyboard.JustDown(this.healKey)) {
+        this.room.send("quick_heal");
+    }
+    if (Phaser.Input.Keyboard.JustDown(this.autoKey)) {
+        this.room.send("toggle_autohunt");
+    }
+    if (Phaser.Input.Keyboard.JustDown(this.enhanceKey)) {
+        this.room.send("enhance_item", { type: "weapon" });
+    }
+    if (Phaser.Input.Keyboard.JustDown(this.skillUpKey)) {
+        this.room.send("upgrade_skill", { skillIndex: 1 });
+    }
 
     let moved = false;
     let dx = 0;
-
     let speed = 6;
     const myState = this.room.state.players.get(this.room.sessionId);
     if (myState && myState.isMounted) {
@@ -845,7 +884,6 @@ class GameScene extends Phaser.Scene {
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.questKey)) {
-        // Only works if near NPC
         if (this.npcs["npc_shop"]) {
            const npc = this.npcs["npc_shop"];
            const myPlayer = this.players[this.room.sessionId];
@@ -872,42 +910,16 @@ class GameScene extends Phaser.Scene {
         this.room.send("skill_cast", { skill: "lariat" });
     }
 
-    // Update Radar Minimap (Phase 74)
-    if (this.minimapGraphics && this.room && this.room.state) {
-        this.minimapGraphics.clear();
-        this.minimapGraphics.setScrollFactor(0);
-        this.minimapGraphics.fillStyle(0x000000, 0.6);
-        this.minimapGraphics.fillRect(10, 490, 200, 45);
-        this.minimapGraphics.lineStyle(2, 0x00ffff, 0.8);
-        this.minimapGraphics.strokeRect(10, 490, 200, 45);
-
-        this.room.state.monsters.forEach((m: any) => {
-            const mx = 10 + (m.x / 2400) * 200;
-            const my = 490 + (m.y / 600) * 45;
-            this.minimapGraphics.fillStyle(0xff2222, 1.0);
-            this.minimapGraphics.fillRect(mx - 2, my - 2, 4, 4);
-        });
-
-        this.room.state.players.forEach((p: any, id: string) => {
-            const px = 10 + (p.x / 2400) * 200;
-            const py = 490 + (p.y / 600) * 45;
-            const isMe = id === this.room.sessionId;
-            this.minimapGraphics.fillStyle(isMe ? 0x00ffff : 0x00ff00, 1.0);
-            this.minimapGraphics.fillRect(px - 2, py - 2, 4, 4);
-        });
-    }
-
     if (Phaser.Input.Keyboard.JustDown(this.attackKey)) {
       let targetId = null;
       let minDistance = 100;
       let isMonster = false;
 
-      const mySprite = this.players[this.room.sessionId];
-      if (mySprite) {
-        // Check monsters first
+      const mySpriteObj = this.players[this.room.sessionId];
+      if (mySpriteObj) {
         for (const id in this.monsters) {
             const enemy = this.monsters[id];
-            const dist = Phaser.Math.Distance.Between(mySprite.x, mySprite.y, enemy.x, enemy.y);
+            const dist = Phaser.Math.Distance.Between(mySpriteObj.x, mySpriteObj.y, enemy.x, enemy.y);
             if (dist < minDistance) {
               minDistance = dist;
               targetId = id;
@@ -915,12 +927,11 @@ class GameScene extends Phaser.Scene {
             }
         }
         
-        // Check players if no monster found
         if (!targetId) {
             for (const id in this.players) {
               if (id !== this.room.sessionId) {
                 const enemy = this.players[id];
-                const dist = Phaser.Math.Distance.Between(mySprite.x, mySprite.y, enemy.x, enemy.y);
+                const dist = Phaser.Math.Distance.Between(mySpriteObj.x, mySpriteObj.y, enemy.x, enemy.y);
                 if (dist < minDistance) {
                   minDistance = dist;
                   targetId = id;
@@ -932,7 +943,6 @@ class GameScene extends Phaser.Scene {
       }
 
       if (targetId) {
-        console.log("Attacking target:", targetId);
         this.room.send("attack", { targetId, isMonster });
       }
     }
