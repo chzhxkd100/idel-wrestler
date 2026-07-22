@@ -293,17 +293,31 @@ export class GameRoom extends Room<GameState> {
           }
           return;
       }
-      if (msg.startsWith("/dye ")) {
+      if (msg.startsWith("/tower ")) {
           const parts = msg.split(" ");
-          const color = parts[1] || "gold";
-          const cost = 50;
-          const currentGold = player.inventory.get("gold") || 0;
-          if (currentGold >= cost) {
-              player.inventory.set("gold", currentGold - cost);
-              player.dyeColor = color;
-              this.broadcast("chat_message", { targetId: player.id, message: `🎨 [DYE] Changed weapon & aura dye color to ${color.toUpperCase()}!` });
-          } else {
-              this.broadcast("chat_message", { targetId: player.id, message: `[Dye] Need 50 Gold to change color.` });
+          if (parts[1] === "enter") {
+              player.x = 1200; player.y = 360;
+              const towerBoss = new Monster(`tower_boss_${player.id}_${player.towerFloor}`, true);
+              towerBoss.x = 1400; towerBoss.y = 360;
+              towerBoss.maxHp = 1000 * player.towerFloor;
+              towerBoss.hp = towerBoss.maxHp;
+              towerBoss.expReward = 200 * player.towerFloor;
+              this.state.monsters.set(towerBoss.id, towerBoss);
+              this.broadcast("chat_message", { targetId: player.id, message: `🏰 [TOWER] Entered Tower Floor ${player.towerFloor}! Boss HP: ${towerBoss.maxHp}` });
+          }
+          return;
+      }
+      if (msg.startsWith("/raid ")) {
+          const parts = msg.split(" ");
+          if (parts[1] === "enter") {
+              player.x = 400; player.y = 500;
+              const raidBoss = new Monster(`commander_raid_${Date.now()}`, true, true);
+              raidBoss.x = 1200; raidBoss.y = 500;
+              raidBoss.maxHp = 50000;
+              raidBoss.hp = 50000;
+              raidBoss.expReward = 5000;
+              this.state.monsters.set(raidBoss.id, raidBoss);
+              this.broadcast("chat_message", { targetId: "SYSTEM", message: `🔥 [SERVER RAID] 100-Player Commander Raid Boss Spawns (50,000 HP)!` });
           }
           return;
       }
@@ -484,6 +498,13 @@ export class GameRoom extends Room<GameState> {
                   const item = new Item(`item_${Date.now()}_${id}`, "gold", dropAmount, monster.x, monster.y);
                   this.state.items.set(item.id, item);
                 }
+
+                 if (monster.id.startsWith("tower_boss_")) {
+                     player.towerFloor += 1;
+                     const currentG = player.inventory.get("gold") || 0;
+                     player.inventory.set("gold", currentG + 500);
+                     this.broadcast("chat_message", { targetId: player.id, message: `🏰 [TOWER VICTORY] Cleared Floor! Advanced to Floor ${player.towerFloor}! Received +500 Gold!` });
+                 }
 
                 this.state.monsters.delete(id);
              }
