@@ -16,8 +16,8 @@ export class Player extends Schema implements IPlayerState {
     super();
     this.id = id;
     this.name = name;
-    this.x = 400 + Math.floor(Math.random() * 100 - 50);
-    this.y = 500;
+    this.x = 400; // Center Screen Spawn
+    this.y = 300;
     this.level = 1;
     this.hp = 100;
     this.maxHp = 100;
@@ -34,7 +34,7 @@ export class Monster extends Schema implements IMonsterState {
   @type("number") hp: number;
   @type("number") maxHp: number;
 
-  constructor(id: string, type: string = "Slime", x: number = 600, y: number = 500) {
+  constructor(id: string, type: string = "Slime", x: number = 550, y: number = 300) {
     super();
     this.id = id;
     this.type = type;

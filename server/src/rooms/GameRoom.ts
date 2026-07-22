@@ -9,13 +9,11 @@ export class GameRoom extends Room<GameState> {
 
     this.spawnInitialMonsters();
 
-    this.onMessage("move", (client: Client, data: { x: number; y?: number }) => {
+    this.onMessage("move", (client: Client, data: { x: number; y: number }) => {
       const player = this.state.players.get(client.sessionId);
       if (player && player.hp > 0) {
-        player.x = Math.max(50, Math.min(2350, data.x));
-        if (data.y !== undefined) {
-          player.y = Math.max(100, Math.min(500, data.y));
-        }
+        player.x = Math.max(30, Math.min(770, data.x));
+        player.y = Math.max(30, Math.min(570, data.y));
       }
     });
 
@@ -69,12 +67,10 @@ export class GameRoom extends Room<GameState> {
 
   spawnInitialMonsters() {
     const initialMobs = [
-      { type: "Slime", x: 600, y: 500 },
-      { type: "Slime", x: 900, y: 500 },
-      { type: "RibbonPig", x: 1200, y: 500 },
-      { type: "RibbonPig", x: 1500, y: 500 },
-      { type: "StoneGolem", x: 1800, y: 500 },
-      { type: "StoneGolem", x: 2100, y: 500 },
+      { type: "Slime", x: 550, y: 300 },
+      { type: "Slime", x: 650, y: 200 },
+      { type: "RibbonPig", x: 250, y: 400 },
+      { type: "StoneGolem", x: 600, y: 450 },
     ];
 
     initialMobs.forEach((m, idx) => {

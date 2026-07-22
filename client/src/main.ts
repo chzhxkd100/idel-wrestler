@@ -19,58 +19,38 @@ class GameScene extends Phaser.Scene {
     super("GameScene");
   }
 
-  preload() {
-    this.load.image("background", "/assets/background.png");
-    this.load.image("wrestler", "/assets/wrestler.png");
-    this.load.image("monster", "/assets/monster.png");
-  }
-
   create() {
-    // 1. Setup Camera & Bounds (2400px x 600px Map)
-    this.cameras.main.setBounds(0, 0, 2400, 600);
+    // 1. Setup Fixed 800x600 View Canvas Background & Terrain
+    const bgGfx = this.add.graphics();
+    bgGfx.fillStyle(0x1a1a2e, 1.0);
+    bgGfx.fillRect(0, 0, 800, 600);
 
-    // Background Image or Fallback Fill
-    if (this.textures.exists("background") && this.textures.get("background").key !== "__MISSING") {
-      this.add.tileSprite(1200, 300, 2400, 600, "background");
-    } else {
-      const bg = this.add.graphics();
-      bg.fillStyle(0x1a237e, 1.0);
-      bg.fillRect(0, 0, 2400, 600);
-    }
+    // Grid Floor / Environment
+    const terrain = this.add.graphics();
+    terrain.fillStyle(0x27ae60, 1.0);
+    terrain.fillRect(0, 500, 800, 100);
+    terrain.lineStyle(4, 0x1e8449, 1.0);
+    terrain.lineBetween(0, 500, 800, 500);
 
-    // 2. Draw Maple 2D Ground & Platforms
-    const graphics = this.add.graphics();
-    graphics.setDepth(1);
-    
-    // Main Ground (Grass)
-    graphics.fillStyle(0x2e7d32, 1.0);
-    graphics.fillRect(0, 520, 2400, 80);
-    graphics.lineStyle(4, 0x1b5e20, 1.0);
-    graphics.lineBetween(0, 520, 2400, 520);
+    // Floating Platform
+    terrain.fillStyle(0x795548, 1.0);
+    terrain.fillRect(250, 350, 300, 20);
+    terrain.lineStyle(2, 0x4e342e, 1.0);
+    terrain.strokeRect(250, 350, 300, 20);
 
-    // Floating Wooden Platforms
-    graphics.fillStyle(0x795548, 1.0);
-    graphics.fillRect(300, 380, 400, 20);
-    graphics.fillRect(1000, 380, 400, 20);
-    graphics.fillRect(1700, 380, 400, 20);
-    graphics.lineStyle(2, 0x4e342e, 1.0);
-    graphics.strokeRect(300, 380, 400, 20);
-    graphics.strokeRect(1000, 380, 400, 20);
-    graphics.strokeRect(1700, 380, 400, 20);
-
-    // 3. Bind Keyboard Controls
+    // 2. Bind Keyboard Controls (WASD & Arrow Keys)
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.attackKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
-    // 4. Fixed View UI Header
-    this.myLevelText = this.add.text(15, 15, "LVL: 1", { fontSize: '22px', color: '#ffffff', fontStyle: 'bold', stroke: '#000000', strokeThickness: 4 }).setScrollFactor(0).setDepth(100);
-    this.myExpText = this.add.text(15, 45, "EXP: 0 / 100", { fontSize: '18px', color: '#ffeb3b', fontStyle: 'bold', stroke: '#000000', strokeThickness: 4 }).setScrollFactor(0).setDepth(100);
+    // 3. UI Layer
+    this.myLevelText = this.add.text(20, 20, "LVL: 1", { fontSize: '24px', color: '#ffffff', fontStyle: 'bold', stroke: '#000000', strokeThickness: 4 }).setDepth(100);
+    this.myExpText = this.add.text(20, 55, "EXP: 0 / 100", { fontSize: '18px', color: '#f1c40f', fontStyle: 'bold', stroke: '#000000', strokeThickness: 4 }).setDepth(100);
 
-    this.statusText = this.add.text(400, 300, "Connecting to Game Server...", { fontSize: '22px', color: '#ffffff', backgroundColor: '#000000bb', padding: { x: 20, y: 12 } }).setOrigin(0.5).setScrollFactor(0).setDepth(100);
+    this.statusText = this.add.text(400, 300, "Connecting to Game Server...", { fontSize: '24px', color: '#ffffff', backgroundColor: '#000000cc', padding: { x: 20, y: 12 } }).setOrigin(0.5).setDepth(100);
 
-    this.add.text(15, 565, "🎮 Controls: [Left / Right Arrow] Move | [Space] Attack Monster", { fontSize: '14px', color: '#ffffff', backgroundColor: '#000000cc', padding: { x: 10, y: 5 } }).setScrollFactor(0).setDepth(100);
+    this.add.text(20, 565, "🎮 Controls: [Arrow Keys / WASD] Move | [Space] Attack Monster", { fontSize: '14px', color: '#ffffff', backgroundColor: '#000000aa', padding: { x: 10, y: 5 } }).setDepth(100);
 
-    // 5. Connect Server
+    // 4. Connect Colyseus Server
     this.connectServer();
   }
 
@@ -80,42 +60,42 @@ class GameScene extends Phaser.Scene {
       this.room = await client.joinOrCreate("game", { username: this.myUsername });
       this.isConnected = true;
       if (this.statusText) this.statusText.destroy();
-      console.log("[Client] Connected to Colyseus Room:", this.room.roomId);
+      console.log("[Client] Connected successfully to room:", this.room.roomId);
 
       this.setupRoomEvents();
     } catch (e) {
-      console.error("[Client] Connection Failed:", e);
+      console.error("[Client] Connection Error:", e);
       if (this.statusText) {
-        this.statusText.setText("Connection Failed!\nPlease ensure server is running on port 2567.");
-        this.statusText.setColor("#ff5252");
+        this.statusText.setText("Connection Failed!\nPlease make sure server is running on port 2567.");
+        this.statusText.setColor("#e74c3c");
       }
     }
   }
 
   setupRoomEvents() {
-    // Damage Popup Listener
+    // Damage Popup
     this.room.onMessage("damage", (data: { targetId: string; damage: number }) => {
       const container = this.monsterContainers[data.targetId] || this.playerContainers[data.targetId];
       if (container) {
-        const dmgText = this.add.text(container.x, container.y - 60, `-${data.damage}`, { fontSize: '24px', color: '#ff1744', fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 3 }).setDepth(50);
+        const dmgText = this.add.text(container.x, container.y - 50, `-${data.damage}`, { fontSize: '26px', color: '#e74c3c', fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 3 }).setDepth(50);
         this.tweens.add({
           targets: dmgText,
-          y: container.y - 110,
+          y: container.y - 100,
           alpha: 0,
-          duration: 900,
+          duration: 800,
           onComplete: () => dmgText.destroy()
         });
       }
     });
 
-    // Levelup Listener
+    // Level Up Popup
     this.room.onMessage("levelup", (data: { playerId: string; level: number }) => {
       if (data.playerId === this.room.sessionId) {
         this.myLevelText.setText(`LVL: ${data.level}`);
-        const lvlText = this.add.text(400, 200, "⚡ LEVEL UP! ⚡", { fontSize: '40px', color: '#ffea00', fontStyle: 'bold', stroke: '#000000', strokeThickness: 5 }).setOrigin(0.5).setScrollFactor(0).setDepth(200);
+        const lvlText = this.add.text(400, 200, "⚡ LEVEL UP! ⚡", { fontSize: '42px', color: '#f1c40f', fontStyle: 'bold', stroke: '#000000', strokeThickness: 6 }).setOrigin(0.5).setDepth(200);
         this.tweens.add({
           targets: lvlText,
-          y: 140,
+          y: 130,
           alpha: 0,
           duration: 1600,
           onComplete: () => lvlText.destroy()
@@ -123,7 +103,7 @@ class GameScene extends Phaser.Scene {
       }
     });
 
-    // Player Sync Handler
+    // Sync Players
     const syncPlayer = (player: any, sessionId: string) => {
       this.createOrUpdatePlayer(player, sessionId);
       player.onChange(() => {
@@ -131,13 +111,8 @@ class GameScene extends Phaser.Scene {
       });
     };
 
-    this.room.state.players.onAdd((player: any, sessionId: string) => {
-      syncPlayer(player, sessionId);
-    });
-
-    this.room.state.players.forEach((player: any, sessionId: string) => {
-      syncPlayer(player, sessionId);
-    });
+    this.room.state.players.onAdd((player: any, sessionId: string) => syncPlayer(player, sessionId));
+    this.room.state.players.forEach((player: any, sessionId: string) => syncPlayer(player, sessionId));
 
     this.room.state.players.onRemove((player: any, sessionId: string) => {
       if (this.playerContainers[sessionId]) {
@@ -146,7 +121,7 @@ class GameScene extends Phaser.Scene {
       }
     });
 
-    // Monster Sync Handler
+    // Sync Monsters
     const syncMonster = (monster: any, id: string) => {
       this.createOrUpdateMonster(monster, id);
       monster.onChange(() => {
@@ -154,13 +129,8 @@ class GameScene extends Phaser.Scene {
       });
     };
 
-    this.room.state.monsters.onAdd((monster: any, id: string) => {
-      syncMonster(monster, id);
-    });
-
-    this.room.state.monsters.forEach((monster: any, id: string) => {
-      syncMonster(monster, id);
-    });
+    this.room.state.monsters.onAdd((monster: any, id: string) => syncMonster(monster, id));
+    this.room.state.monsters.forEach((monster: any, id: string) => syncMonster(monster, id));
 
     this.room.state.monsters.onRemove((monster: any, id: string) => {
       if (this.monsterContainers[id]) {
@@ -170,6 +140,7 @@ class GameScene extends Phaser.Scene {
     });
   }
 
+  // Pure Graphics Vector Model (100% Guaranteed Visual Character Display)
   createOrUpdatePlayer(player: any, sessionId: string) {
     let container = this.playerContainers[sessionId];
     const isMe = (sessionId === this.room.sessionId);
@@ -178,42 +149,36 @@ class GameScene extends Phaser.Scene {
       container = this.add.container(player.x, player.y);
       container.setDepth(10);
 
-      // Sprite or Graphics Fallback
-      if (this.textures.exists("wrestler") && this.textures.get("wrestler").key !== "__MISSING") {
-        const sprite = this.add.sprite(0, -25, "wrestler");
-        sprite.setScale(0.25);
-        container.add(sprite);
-      } else {
-        const gfx = this.add.graphics();
-        gfx.fillStyle(isMe ? 0x29b6f6 : 0xab47bc, 1.0);
-        gfx.fillRect(-16, -40, 32, 40);
-        gfx.fillStyle(0xffe0b2, 1.0);
-        gfx.fillCircle(0, -50, 16);
-        gfx.fillStyle(0xffd54f, 1.0);
-        gfx.fillRect(-16, -24, 32, 8);
-        gfx.fillStyle(0x000000, 1.0);
-        gfx.fillCircle(-5, -53, 3);
-        gfx.fillCircle(5, -53, 3);
-        container.add(gfx);
-      }
+      // 1. Draw 2D Wrestler Character Model
+      const gfx = this.add.graphics();
+      // Body (Torso)
+      gfx.fillStyle(isMe ? 0x3498db : 0x9b59b6, 1.0);
+      gfx.fillRoundedRect(-18, -35, 36, 35, 6);
+      // Head
+      gfx.fillStyle(0xf5cba7, 1.0);
+      gfx.fillCircle(0, -46, 15);
+      // Wrestler Belt
+      gfx.fillStyle(0xf1c40f, 1.0);
+      gfx.fillRect(-18, -20, 36, 8);
+      // Eyes
+      gfx.fillStyle(0x2c3e50, 1.0);
+      gfx.fillCircle(-5, -48, 3);
+      gfx.fillCircle(5, -48, 3);
 
-      // Name Tag
-      const nameColor = isMe ? '#00e676' : '#ffffff';
-      const nameText = this.add.text(0, -80, `[Lv.${player.level}] ${player.name || "Wrestler"}`, { fontSize: '14px', color: nameColor, fontStyle: 'bold', stroke: '#000000', strokeThickness: 3 }).setOrigin(0.5);
+      container.add(gfx);
+
+      // 2. Nametag & Level Badge
+      const nameColor = isMe ? '#2ecc71' : '#ffffff';
+      const nameText = this.add.text(0, -75, `[Lv.${player.level}] ${player.name || "Wrestler"}`, { fontSize: '15px', color: nameColor, fontStyle: 'bold', stroke: '#000000', strokeThickness: 4 }).setOrigin(0.5);
       nameText.setName("nameText");
       container.add(nameText);
 
-      // HP Bar Graphic
+      // 3. HP Bar Graphic
       const hpGfx = this.add.graphics();
       hpGfx.setName("hpGfx");
       container.add(hpGfx);
 
       this.playerContainers[sessionId] = container;
-
-      // Start Camera Follow for My Player
-      if (isMe) {
-        this.cameras.main.startFollow(container, true, 0.1, 0.1);
-      }
     }
 
     container.x = player.x;
@@ -227,16 +192,16 @@ class GameScene extends Phaser.Scene {
     const hpGfx = container.getByName("hpGfx") as Phaser.GameObjects.Graphics;
     if (hpGfx) {
       hpGfx.clear();
-      const barWidth = 40;
+      const barWidth = 44;
       const barHeight = 6;
       const hpRatio = Math.max(0, player.hp / player.maxHp);
       
       hpGfx.fillStyle(0x000000, 0.7);
-      hpGfx.fillRect(-barWidth/2, -68, barWidth, barHeight);
-      hpGfx.fillStyle(0x00e676, 1.0);
-      hpGfx.fillRect(-barWidth/2, -68, barWidth * hpRatio, barHeight);
-      hpGfx.lineStyle(1, 0xffffff, 0.8);
-      hpGfx.strokeRect(-barWidth/2, -68, barWidth, barHeight);
+      hpGfx.fillRect(-barWidth/2, -62, barWidth, barHeight);
+      hpGfx.fillStyle(0x2ecc71, 1.0);
+      hpGfx.fillRect(-barWidth/2, -62, barWidth * hpRatio, barHeight);
+      hpGfx.lineStyle(1, 0xffffff, 0.9);
+      hpGfx.strokeRect(-barWidth/2, -62, barWidth, barHeight);
     }
 
     if (isMe) {
@@ -245,6 +210,7 @@ class GameScene extends Phaser.Scene {
     }
   }
 
+  // Pure Graphics Vector Model for Monster
   createOrUpdateMonster(monster: any, id: string) {
     let container = this.monsterContainers[id];
 
@@ -252,24 +218,21 @@ class GameScene extends Phaser.Scene {
       container = this.add.container(monster.x, monster.y);
       container.setDepth(8);
 
-      if (this.textures.exists("monster") && this.textures.get("monster").key !== "__MISSING") {
-        const sprite = this.add.sprite(0, -25, "monster");
-        sprite.setScale(0.35);
-        container.add(sprite);
-      } else {
-        const gfx = this.add.graphics();
-        gfx.fillStyle(monster.type === "Slime" ? 0x66bb6a : (monster.type === "RibbonPig" ? 0xef5350 : 0x8d6e63), 1.0);
-        gfx.fillCircle(0, -20, 22);
-        gfx.fillStyle(0xffffff, 1.0);
-        gfx.fillCircle(-7, -25, 5);
-        gfx.fillCircle(7, -25, 5);
-        gfx.fillStyle(0x000000, 1.0);
-        gfx.fillCircle(-7, -25, 2);
-        gfx.fillCircle(7, -25, 2);
-        container.add(gfx);
-      }
+      const gfx = this.add.graphics();
+      const mobColor = monster.type === "Slime" ? 0x2ecc71 : (monster.type === "RibbonPig" ? 0xe74c3c : 0xe67e22);
+      
+      gfx.fillStyle(mobColor, 1.0);
+      gfx.fillCircle(0, -20, 20);
+      gfx.fillStyle(0xffffff, 1.0);
+      gfx.fillCircle(-6, -24, 5);
+      gfx.fillCircle(6, -24, 5);
+      gfx.fillStyle(0x000000, 1.0);
+      gfx.fillCircle(-6, -24, 2);
+      gfx.fillCircle(6, -24, 2);
 
-      const typeText = this.add.text(0, -60, monster.type, { fontSize: '13px', color: '#ffeb3b', fontStyle: 'bold', stroke: '#000000', strokeThickness: 3 }).setOrigin(0.5);
+      container.add(gfx);
+
+      const typeText = this.add.text(0, -52, monster.type, { fontSize: '13px', color: '#f1c40f', fontStyle: 'bold', stroke: '#000000', strokeThickness: 3 }).setOrigin(0.5);
       container.add(typeText);
 
       const hpGfx = this.add.graphics();
@@ -290,11 +253,11 @@ class GameScene extends Phaser.Scene {
       const hpRatio = Math.max(0, monster.hp / monster.maxHp);
       
       hpGfx.fillStyle(0x000000, 0.7);
-      hpGfx.fillRect(-barWidth/2, -50, barWidth, barHeight);
-      hpGfx.fillStyle(0xff1744, 1.0);
-      hpGfx.fillRect(-barWidth/2, -50, barWidth * hpRatio, barHeight);
+      hpGfx.fillRect(-barWidth/2, -44, barWidth, barHeight);
+      hpGfx.fillStyle(0xe74c3c, 1.0);
+      hpGfx.fillRect(-barWidth/2, -44, barWidth * hpRatio, barHeight);
       hpGfx.lineStyle(1, 0xffffff, 0.8);
-      hpGfx.strokeRect(-barWidth/2, -50, barWidth, barHeight);
+      hpGfx.strokeRect(-barWidth/2, -44, barWidth, barHeight);
     }
   }
 
@@ -306,19 +269,16 @@ class GameScene extends Phaser.Scene {
 
     let moved = false;
     let dx = 0;
+    let dy = 0;
     const speed = 5;
 
-    if (this.cursors.left.isDown) {
-      dx -= speed;
-      moved = true;
-    }
-    if (this.cursors.right.isDown) {
-      dx += speed;
-      moved = true;
-    }
+    if (this.cursors.left.isDown) { dx -= speed; moved = true; }
+    if (this.cursors.right.isDown) { dx += speed; moved = true; }
+    if (this.cursors.up.isDown) { dy -= speed; moved = true; }
+    if (this.cursors.down.isDown) { dy += speed; moved = true; }
 
     if (moved) {
-      this.room.send("move", { x: myContainer.x + dx });
+      this.room.send("move", { x: myContainer.x + dx, y: myContainer.y + dy });
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.attackKey)) {
