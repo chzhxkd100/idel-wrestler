@@ -1,1 +1,0 @@
-{"root":["./src/bot.ts","./src/db.ts","./src/index.ts","./src/rooms/gameroom.ts","./src/rooms/schema/gamestate.ts","./src/routes/auth.ts"],"version":"5.9.3"}
