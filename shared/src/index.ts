@@ -34,6 +34,7 @@ export interface IPlayerState {
   weaponLevel: number;
   beltLevel: number;
   isAutoHunting: boolean;
+  isChampion: boolean;
 }
 
 export interface IMonsterState {

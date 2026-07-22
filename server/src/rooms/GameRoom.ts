@@ -21,6 +21,20 @@ export class GameRoom extends Room<GameState> {
         player.lastMoveTime = Date.now();
         if (player.isAFK) player.isAFK = false;
 
+        // Dungeon Portal Check (X >= 2300)
+        if (player.x >= 2300 && player.y >= 450) {
+            player.x = 150;
+            player.y = 500;
+            this.broadcast("chat_message", { targetId: player.id, message: `🌀 [DUNGEON] Entered Instance Dungeon! Boss Spawns!` });
+            const dungeonBoss = new Monster(`dungeon_boss_${Date.now()}`, true, true);
+            dungeonBoss.x = 500;
+            dungeonBoss.y = 500;
+            dungeonBoss.hp = 3000;
+            dungeonBoss.maxHp = 3000;
+            dungeonBoss.expReward = 500;
+            this.state.monsters.set(dungeonBoss.id, dungeonBoss);
+        }
+
         // Check ladder climbing
         const nearRope = (Math.abs(player.x - 400) < 30 || Math.abs(player.x - 1400) < 30);
         if (data.climbUp || data.climbDown) {
@@ -215,6 +229,30 @@ export class GameRoom extends Room<GameState> {
           } else if (cmd === "leave") {
               player.partyId = "None";
               this.broadcast("chat_message", { targetId: player.id, message: `[Party] Left the party.` });
+          }
+          return;
+      }
+      if (msg.startsWith("/market ")) {
+          const parts = msg.split(" ");
+          const sub = parts[1];
+          if (sub === "sell" && parts[2]) {
+              const price = parseInt(parts[2]) || 100;
+              if (player.hasWeapon) {
+                  player.hasWeapon = false;
+                  this.broadcast("chat_message", { targetId: "SYSTEM", message: `🏪 [MARKET] ${player.name} listed Legendary Weapon for ${price} Gold! (/market buy ${player.name})` });
+              } else {
+                  this.broadcast("chat_message", { targetId: player.id, message: `[Market] You don't have a weapon to sell.` });
+              }
+          } else if (sub === "buy" && parts[2]) {
+              const sellerName = parts[2];
+              const currentGold = player.inventory.get("gold") || 0;
+              if (currentGold >= 200) {
+                  player.inventory.set("gold", currentGold - 200);
+                  player.hasWeapon = true;
+                  this.broadcast("chat_message", { targetId: "SYSTEM", message: `🛍️ [MARKET] ${player.name} bought Legendary Weapon from ${sellerName}!` });
+              } else {
+                  this.broadcast("chat_message", { targetId: player.id, message: `[Market] Need 200 Gold to buy item.` });
+              }
           }
           return;
       }
@@ -635,7 +673,21 @@ export class GameRoom extends Room<GameState> {
         }
     }
 
-    // Weather Cycle
+    // Update Leaderboard & Champion Status
+    let topPlayer: Player | null = null;
+    let maxLevel = -1;
+
+    this.state.players.forEach((player) => {
+        player.isChampion = false;
+        if (player.level > maxLevel) {
+            maxLevel = player.level;
+            topPlayer = player;
+        }
+    });
+
+    if (topPlayer) {
+        (topPlayer as Player).isChampion = true;
+    }
     this.weatherTimer += deltaTime;
     if (this.weatherTimer >= 90000) { // 90 seconds
         this.weatherTimer -= 90000;

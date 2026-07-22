@@ -93,6 +93,10 @@ class GameScene extends Phaser.Scene {
     this.platformGraphics.fillRect(395, 220, 10, 280);
     this.platformGraphics.fillRect(1395, 220, 10, 280);
 
+    // Dungeon Portal Graphic (X = 2350, Y = 450)
+    const portal = this.add.text(2350, 450, "🌀 PORTAL", { fontSize: '24px', color: '#00ffff', fontStyle: 'bold', stroke: '#ff00ff', strokeThickness: 4 });
+    portal.setOrigin(0.5);
+
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.jumpKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.ALT);
     this.attackKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
@@ -375,10 +379,13 @@ class GameScene extends Phaser.Scene {
         hpText.setOrigin(0.5);
         this.uiTexts[sessionId] = hpText;
 
+        const champTag = player.isChampion ? "👑[CHAMPION] " : "";
+        const afkTag = player.isAFK ? "[Zzz] " : "";
         const nameStr = player.guildName !== "None" 
-            ? `[${player.guildName}] [${player.jobClass}] ${player.name || "Wrestler"}`
-            : `[${player.jobClass}] ${player.name || "Wrestler"}`;
-        const nameText = this.add.text(player.x, player.y - 70, nameStr, { fontSize: '14px', color: '#fff', fontStyle: 'bold' });
+            ? `${champTag}${afkTag}[${player.guildName}] [${player.jobClass}] ${player.name || "Wrestler"}`
+            : `${champTag}${afkTag}[${player.jobClass}] ${player.name || "Wrestler"}`;
+        const nameColor = player.isChampion ? '#ffcc00' : (player.isAFK ? '#aaaaaa' : '#ffffff');
+        const nameText = this.add.text(player.x, player.y - 70, nameStr, { fontSize: '14px', color: nameColor, fontStyle: 'bold' });
         nameText.setOrigin(0.5);
         this.uiTexts[sessionId + "_name"] = nameText;
 
