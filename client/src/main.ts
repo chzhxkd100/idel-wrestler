@@ -40,6 +40,7 @@ class GameScene extends Phaser.Scene {
   private autoKey!: Phaser.Input.Keyboard.Key;
   private enhanceKey!: Phaser.Input.Keyboard.Key;
   private skillUpKey!: Phaser.Input.Keyboard.Key;
+  private dpsText!: Phaser.GameObjects.Text;
   private isChatting: boolean = false;
   private isCameraFollowing: boolean = false;
   private comboText!: Phaser.GameObjects.Text;
@@ -143,6 +144,10 @@ class GameScene extends Phaser.Scene {
     this.add.text(10, 550, "Z:Skill | Alt:Jump | Shift:Pick | A:Auto | E:Enhance | K:SkillUp | H:Heal | Q:Quest | I:Inv | P:Shop", { fontSize: '14px', color: '#fff' });
     this.comboText = this.add.text(400, 250, "", { fontSize: '40px', color: '#ffaa00', fontStyle: 'bold', stroke: '#000000', strokeThickness: 4 });
     this.comboText.setOrigin(0.5);
+
+    this.dpsText = this.add.text(400, 25, "📊 DPS: 350 | EXP/m: 1,200 | GOLD/m: 600", { fontSize: '16px', color: '#00ffcc', fontStyle: 'bold', stroke: '#000000', strokeThickness: 3 });
+    this.dpsText.setOrigin(0.5);
+    this.dpsText.setScrollFactor(0);
 
     this.minimapGraphics = this.add.graphics();
     this.weatherEmitter = this.add.particles(400, 0, 'skill', {

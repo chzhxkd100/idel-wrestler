@@ -352,6 +352,12 @@ export class GameRoom extends Room<GameState> {
               this.broadcast("chat_message", { targetId: "SYSTEM", message: `⚔️ [SIEGE WAR] ${player.guildName || player.name} entered Siege War! Destroy the Guardian Crystal!` });
               return;
           }
+          if (parts[1] === "house") {
+              player.x = 400;
+              player.y = 220;
+              this.broadcast("chat_message", { targetId: player.id, message: `🏠 [GUILD HOUSE] Entered Guild Sanctuary with ${player.guildName}!` });
+              return;
+          }
           if (parts.length >= 2) {
              const guildName = parts.slice(1).join(" ");
              player.guildName = guildName;
