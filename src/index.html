@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2D 횡스크롤 멀티플레이어 맵 & 이동 테스트</title>
+  <meta name="description" content="2D 횡스크롤 멀티플레이어 맵과 이동 동기화">
+  <link rel="stylesheet" href="./styles/main.css">
+</head>
+<body>
+
+  <div id="app-container">
+    <!-- Game Canvas Viewport -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- HUD Overlay -->
+    <div id="hud-layer">
+      <!-- Top Right: Minimap -->
+      <div class="top-right-group">
+        <div class="minimap-card hud-interactive">
+          <div class="minimap-header">🗺️ 미니맵</div>
+          <canvas id="minimap-canvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Controls Guide Bar -->
+      <div class="controls-guide hud-interactive">
+        <span>🎮 조작키: <b>A / D</b> (이동) | <b>Space</b> (점프) | <b>W / S</b> (사다리)</span>
+      </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal-overlay" id="login-modal">
+      <div class="game-modal">
+        <div class="modal-header">
+          <span>🎮 게임 입장</span>
+        </div>
+        <div>
+          <label style="font-size: 12px; color: #a0aec0;">플레이어 닉네임</label>
+          <input type="text" id="login-nickname" class="form-input" placeholder="닉네임을 입력하세요 (기본: 모험가)">
+          <button class="btn-primary" id="btn-start-game">게임 시작 🚀</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

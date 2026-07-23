@@ -1,0 +1,180 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;800&family=Press+Start+2P&family=Outfit:wght@400;600;800&display=swap');
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+body, html {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #0d0e15;
+  font-family: 'Noto Sans KR', 'Outfit', sans-serif;
+  color: #f0f2fb;
+}
+
+#app-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Canvas Viewport */
+#game-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  z-index: 1;
+}
+
+/* HUD Overlay Layer */
+#hud-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px;
+}
+
+/* Make interactive elements inside HUD pointer-events auto */
+.hud-interactive {
+  pointer-events: auto;
+}
+
+/* Top Right: Mini Map */
+.top-right-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.minimap-card {
+  width: 200px;
+  height: 130px;
+  background: rgba(15, 18, 28, 0.85);
+  backdrop-filter: blur(8px);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+  overflow: hidden;
+  position: relative;
+}
+
+.minimap-header {
+  padding: 4px 10px;
+  background: rgba(0, 0, 0, 0.5);
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffd166;
+  text-align: center;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+#minimap-canvas {
+  width: 100%;
+  height: calc(100% - 24px);
+  background: #090b10;
+}
+
+/* Controls Guide Bar */
+.controls-guide {
+  align-self: center;
+  background: rgba(15, 18, 28, 0.8);
+  backdrop-filter: blur(10px);
+  padding: 10px 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  font-size: 13px;
+  color: #e2e8f0;
+}
+
+.controls-guide b {
+  color: #ffaa00;
+}
+
+/* Modals */
+.modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(5, 7, 12, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 100;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.game-modal {
+  background: linear-gradient(145deg, #181d2d, #0f131f);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(88, 101, 242, 0.2);
+  min-width: 320px;
+  color: #fff;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: 10px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+  font-size: 14px;
+  margin-top: 6px;
+  margin-bottom: 16px;
+  outline: none;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #5865f2, #4752c4);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(88, 101, 242, 0.5);
+  transition: transform 0.1s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #6775f4, #505dc9);
+}
+
+.hidden { display: none !important; }

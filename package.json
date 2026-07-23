@@ -1,0 +1,23 @@
+{
+  "name": "idel-wrestler-mmorpg",
+  "version": "1.0.0",
+  "description": "2D Side-Scrolling MMORPG",
+  "main": "server/server.js",
+  "type": "module",
+  "scripts": {
+    "dev:server": "node server/server.js",
+    "dev:client": "vite",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5",
+    "socket.io-client": "^4.7.5"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "vite": "^5.2.0"
+  }
+}
