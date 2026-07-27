@@ -49,7 +49,13 @@ io.on('connection', (socket) => {
       vy: 0,
       facing: 1,
       animState: 'idle',
-      isClimbing: false
+      isClimbing: false,
+      equipment: {
+        hat: 'knight_helm',
+        top: 'knight_plate',
+        bottom: 'steel_pants',
+        weapon: 'magic_sword'
+      }
     };
 
     // Send init payload to joined client
@@ -72,6 +78,27 @@ io.on('connection', (socket) => {
     p.facing = data.facing;
     p.animState = data.animState;
     p.isClimbing = data.isClimbing;
+    if (data.equipment) p.equipment = data.equipment;
+  });
+
+  // Handle Explicit Equipment Swap & Instant Broadcast
+  socket.on('changeEquipment', (data) => {
+    const p = players[socket.id];
+    if (!p) return;
+
+    p.equipment = {
+      hat: data.hat || 'knight_helm',
+      top: data.top || 'knight_plate',
+      bottom: data.bottom || 'steel_pants',
+      weapon: 'magic_sword',
+      ...data
+    };
+
+    // Instant broadcast to all clients
+    io.emit('playerEquipChanged', {
+      id: socket.id,
+      equipment: p.equipment
+    });
   });
 
   // Handle Map Transition via Portal

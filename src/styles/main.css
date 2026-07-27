@@ -77,13 +77,38 @@ body, html {
 }
 
 .minimap-header {
-  padding: 4px 10px;
+  padding: 4px 8px;
   background: rgba(0, 0, 0, 0.5);
   font-size: 11px;
   font-weight: 700;
   color: #ffd166;
-  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.btn-sound-toggle {
+  background: rgba(0, 210, 211, 0.2);
+  border: 1px solid rgba(0, 210, 211, 0.5);
+  color: #00d2d3;
+  font-size: 9px;
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 2px 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-sound-toggle:hover {
+  background: rgba(0, 210, 211, 0.4);
+  color: #ffffff;
+}
+
+.btn-sound-toggle.muted {
+  background: rgba(235, 77, 75, 0.2);
+  border-color: rgba(235, 77, 75, 0.5);
+  color: #ff7675;
 }
 
 #minimap-canvas {
@@ -178,3 +203,76 @@ body, html {
 }
 
 .hidden { display: none !important; }
+
+/* NPC Dialog Card UI */
+.dialog-card {
+  position: absolute;
+  bottom: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(650px, 90vw);
+  background: linear-gradient(135deg, rgba(16, 24, 40, 0.92), rgba(10, 15, 26, 0.95));
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 210, 211, 0.35);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7), 0 0 25px rgba(0, 210, 211, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  pointer-events: auto;
+  z-index: 50;
+  animation: dialogPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes dialogPop {
+  0% { opacity: 0; transform: translate(-50%, 20px) scale(0.95); }
+  100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+.dialog-portrait-box {
+  width: 96px;
+  height: 96px;
+  background: radial-gradient(circle, rgba(0, 210, 211, 0.3), rgba(10, 15, 30, 0.9));
+  border: 2px solid rgba(0, 210, 211, 0.8);
+  border-radius: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: 0 0 15px rgba(0, 210, 211, 0.3);
+}
+
+.dialog-portrait-box img {
+  width: 86px;
+  height: 86px;
+  object-fit: contain;
+}
+
+.dialog-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dialog-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: #00d2d3;
+  letter-spacing: -0.2px;
+}
+
+.dialog-text {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #e2e8f0;
+}
+
+.dialog-hint {
+  font-size: 11px;
+  color: #a0aec0;
+  align-self: flex-end;
+  margin-top: 4px;
+}

@@ -18,14 +18,29 @@
       <!-- Top Right: Minimap -->
       <div class="top-right-group">
         <div class="minimap-card hud-interactive">
-          <div class="minimap-header">🗺️ 미니맵</div>
+          <div class="minimap-header">
+            <span id="minimap-title">🗺️ 미니맵</span>
+            <button id="btn-sound-toggle" class="btn-sound-toggle">🎵 BGM ON</button>
+          </div>
           <canvas id="minimap-canvas"></canvas>
         </div>
       </div>
 
       <!-- Controls Guide Bar -->
       <div class="controls-guide hud-interactive">
-        <span>🎮 조작키: <b>A / D</b> (이동) | <b>Space</b> (점프) | <b>W / S</b> (사다리)</span>
+        <span>🎮 조작키: <b>A / D</b> (이동) | <b>Space</b> (점프/대화) | <b>W / S</b> (사다리) | <b>1/2/3</b> (무기/투구/갑옷 교체)</span>
+      </div>
+
+      <!-- NPC Dialog Modal -->
+      <div id="dialog-modal" class="dialog-card hidden">
+        <div class="dialog-portrait-box">
+          <img id="dialog-portrait" src="/assets/npc_girl.png" alt="NPC Avatar" />
+        </div>
+        <div class="dialog-body">
+          <div id="dialog-name" class="dialog-name">🌸 섬마을 소녀 리리아</div>
+          <div id="dialog-text" class="dialog-text">안녕! 여긴 파도소리가 감미로운 코랄 아일랜드야~ 🌊✨ 바다 아래 영롱한 산호 보석들을 구경해보렴!</div>
+          <div class="dialog-hint">[Space] / [Enter] 닫기</div>
+        </div>
       </div>
     </div>
 

@@ -1,5 +1,6 @@
 import { SpriteManager } from './SpriteManager.js';
 import { PhysicsEngine } from './PhysicsEngine.js';
+import { AudioManager } from './AudioManager.js';
 
 export class GameEngine {
   constructor(canvas, minimapCanvas) {
@@ -11,9 +12,14 @@ export class GameEngine {
 
     this.spriteMgr = new SpriteManager();
     this.physics = new PhysicsEngine();
+    this.audio = new AudioManager();
 
     this.camX = 0;
     this.camY = 0;
+    this.currentRenderMapId = null;
+
+    // DOM Caching
+    this.headerEl = document.querySelector('#minimap-title');
 
     // Local Game Objects
     this.selfId = null;
@@ -35,13 +41,21 @@ export class GameEngine {
     const currentMapId = this.localPlayer ? (this.localPlayer.mapId || 'map1') : 'map1';
     const mapData = this.physics.getMapData(currentMapId);
 
+    // BGM Playback trigger per map
+    if (this.currentRenderMapId !== currentMapId) {
+      this.currentRenderMapId = currentMapId;
+      this.audio.playMapBgm(currentMapId);
+    }
+
     // Smooth Camera Tracking Local Player
     if (this.localPlayer) {
       const targetCamX = this.localPlayer.x - this.canvas.width / 2;
       const targetCamY = this.localPlayer.y - this.canvas.height / 2 - 40;
 
-      this.camX += (targetCamX - this.camX) * 0.1;
-      this.camY += (targetCamY - this.camY) * 0.1;
+      // Frame-rate independent camera lerp (approx 15% per 60fps frame)
+      const camLerp = 1 - Math.pow(0.85, dt * 60);
+      this.camX += (targetCamX - this.camX) * camLerp;
+      this.camY += (targetCamY - this.camY) * camLerp;
 
       // Clamp Camera to map boundaries
       this.camX = Math.max(0, Math.min(2400 - this.canvas.width, this.camX));
@@ -65,14 +79,47 @@ export class GameEngine {
       this.spriteMgr.drawPortal(ctx, p);
     });
 
+    // 3.5. Draw NPCs on current map
+    const nearbyNPC = this.localPlayer ? this.physics.getNearbyNPC(this.localPlayer, currentMapId) : null;
+    (mapData.npcs || []).forEach(npc => {
+      const isNearby = nearbyNPC && nearbyNPC.id === npc.id;
+      this.spriteMgr.drawNPC(ctx, npc, isNearby);
+    });
+
     // 4. Draw Players on the same map
+    const remotePlayersCount = Object.keys(this.players).length;
+    let localPlayerDrawn = false;
+
     Object.values(this.players).forEach(p => {
-      const playerMap = p.mapId || 'map1';
+      const isSelf = p.id === this.selfId;
+      const displayPlayer = isSelf ? this.localPlayer : p;
+
+      if (!displayPlayer) return;
+
+      const playerMap = displayPlayer.mapId || 'map1';
       if (playerMap === currentMapId) {
-        const isSelf = p.id === this.selfId;
-        this.spriteMgr.drawPlayer(ctx, p, isSelf);
+        if (isSelf) {
+          localPlayerDrawn = true;
+          this.spriteMgr.drawPlayer(ctx, this.localPlayer, true);
+        } else {
+          // Smooth remote player position interpolation
+          if (p.renderX === undefined) p.renderX = p.x;
+          if (p.renderY === undefined) p.renderY = p.y;
+
+          const lerpFactor = 1 - Math.pow(0.7, dt * 60);
+          p.renderX += (p.x - p.renderX) * lerpFactor;
+          p.renderY += (p.y - p.renderY) * lerpFactor;
+
+          const tempP = { ...p, x: p.renderX, y: p.renderY };
+          this.spriteMgr.drawPlayer(ctx, tempP, false);
+        }
       }
     });
+
+    // Fallback if local player is not in players list yet
+    if (!localPlayerDrawn && this.localPlayer && (this.localPlayer.mapId || 'map1') === currentMapId) {
+      this.spriteMgr.drawPlayer(ctx, this.localPlayer, true);
+    }
 
     ctx.restore();
 
@@ -145,25 +192,68 @@ export class GameEngine {
       ctx.lineTo(w, h);
       ctx.closePath();
       ctx.fill();
+    } else if (theme === 'coral_island') {
+      // Tropical Turquoise Ocean & Coral Reef Sky
+      const sky = ctx.createLinearGradient(0, 0, 0, h);
+      sky.addColorStop(0, '#0c2461');
+      sky.addColorStop(0.35, '#1e3799');
+      sky.addColorStop(0.7, '#00a8ff');
+      sky.addColorStop(1, '#00d2d3');
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, w, h);
+
+      // Distant Tropical Coral Island Silhouettes
+      ctx.fillStyle = '#0a3d62';
+      ctx.beginPath();
+      ctx.moveTo(0, h);
+      for (let x = 0; x <= w; x += 100) {
+        const hillY = h - 230 + Math.sin((x + this.camX * 0.12) * 0.006) * 50;
+        ctx.lineTo(x, hillY);
+      }
+      ctx.lineTo(w, h);
+      ctx.closePath();
+      ctx.fill();
+
+      // Glowing Seafoam Ocean Waves Overlay
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+      for (let i = 0; i < 4; i++) {
+        const waveY = h - 160 + i * 28 + Math.sin(Date.now() * 0.002 + i) * 6;
+        ctx.fillRect(0, waveY, w, 3);
+      }
     }
   }
 
   drawMapElements(ctx, mapData) {
+    const theme = mapData.theme || 'forest';
+
+    // Draw Coral Props for Island Map
+    if (theme === 'coral_island') {
+      if (!this.coralTreeImg) {
+        this.coralTreeImg = new Image();
+        this.coralTreeImg.src = '/assets/coral_tree.png';
+      }
+      if (this.coralTreeImg.complete && this.coralTreeImg.naturalWidth !== 0) {
+        ctx.drawImage(this.coralTreeImg, 480, 840, 80, 80);
+        ctx.drawImage(this.coralTreeImg, 780, 540, 80, 80);
+        ctx.drawImage(this.coralTreeImg, 1380, 420, 80, 80);
+        ctx.drawImage(this.coralTreeImg, 1920, 600, 80, 80);
+      }
+    }
+
     // Draw Ladders
     mapData.ladders.forEach(l => {
-      ctx.fillStyle = '#8d6e63';
+      ctx.fillStyle = theme === 'coral_island' ? '#a0522d' : '#8d6e63';
       ctx.fillRect(l.x - 12, l.yMin, 4, l.yMax - l.yMin);
       ctx.fillRect(l.x + 8, l.yMin, 4, l.yMax - l.yMin);
 
       // Rungs
-      ctx.fillStyle = '#d7ccc8';
+      ctx.fillStyle = theme === 'coral_island' ? '#f4a261' : '#d7ccc8';
       for (let y = l.yMin + 10; y < l.yMax; y += 20) {
         ctx.fillRect(l.x - 12, y, 24, 4);
       }
     });
 
     // Draw Platforms
-    const theme = mapData.theme || 'forest';
     mapData.platforms.forEach(p => {
       if (p.isGround) {
         if (theme === 'forest') {
@@ -187,6 +277,13 @@ export class GameEngine {
           ctx.fillRect(p.x, p.y, p.width, 16);
           ctx.fillStyle = '#e74c3c';
           ctx.fillRect(p.x, p.y, p.width, 4);
+        } else if (theme === 'coral_island') {
+          ctx.fillStyle = '#d4a373';
+          ctx.fillRect(p.x, p.y, p.width, p.height);
+          ctx.fillStyle = '#e9c46a';
+          ctx.fillRect(p.x, p.y, p.width, 16);
+          ctx.fillStyle = '#00b4d8';
+          ctx.fillRect(p.x, p.y, p.width, 4);
         }
       } else {
         // Elevated Platforms
@@ -195,6 +292,13 @@ export class GameEngine {
           ctx.fillRect(p.x, p.y, p.width, p.height);
           ctx.fillStyle = '#962d2d';
           ctx.fillRect(p.x, p.y, p.width, 5);
+        } else if (theme === 'coral_island') {
+          ctx.fillStyle = '#8b5a2b';
+          ctx.fillRect(p.x, p.y, p.width, p.height);
+          ctx.fillStyle = '#cd853f';
+          ctx.fillRect(p.x, p.y, p.width, 5);
+          ctx.fillStyle = '#00f5d4';
+          ctx.fillRect(p.x, p.y, p.width, 2);
         } else {
           ctx.fillStyle = '#4e342e';
           ctx.fillRect(p.x, p.y, p.width, p.height);
@@ -213,10 +317,12 @@ export class GameEngine {
     const scaleX = w / 2400;
     const scaleY = h / 1200;
 
-    // Update Header Text in DOM
-    const headerEl = document.querySelector('.minimap-header');
-    if (headerEl && mapData) {
-      headerEl.innerText = mapData.name;
+    // Update Header Text using cached element
+    if (!this.headerEl) {
+      this.headerEl = document.querySelector('.minimap-header');
+    }
+    if (this.headerEl && mapData) {
+      this.headerEl.innerText = mapData.name;
     }
 
     ctx.clearRect(0, 0, w, h);
