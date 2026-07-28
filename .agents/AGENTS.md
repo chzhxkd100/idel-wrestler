@@ -6,3 +6,4 @@
 2. **AI-Optimized Handoff:** Ensure `CONTEXT.md` remains clean, highly structured, and accurate so subsequent AI assistants can immediately pick up development without guesswork.
 3. **Incremental Development:** Follow the user's instructions to build features step-by-step rather than re-introducing complex unrequested systems.
 4. **Verification:** Run `npm run build` to verify code integrity after editing.
+5. **No Protracted Browser Subagent Testing:** DO NOT run long, repetitive automated browser subagent testing loops. It is slow and inefficient. Once `npm run build` passes, verify server startup if needed, briefly open the URL or hand off immediately so the user can perform visual and gameplay testing in their browser.

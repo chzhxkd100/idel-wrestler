@@ -58,8 +58,10 @@ export class GameEngine {
       this.camY += (targetCamY - this.camY) * camLerp;
 
       // Clamp Camera to map boundaries
-      this.camX = Math.max(0, Math.min(2400 - this.canvas.width, this.camX));
-      this.camY = Math.max(0, Math.min(1200 - this.canvas.height, this.camY));
+      const mapWidth = mapData.width || 2400;
+      const mapHeight = mapData.height || 1200;
+      this.camX = Math.max(0, Math.min(mapWidth - this.canvas.width, this.camX));
+      this.camY = Math.max(0, Math.min(mapHeight - this.canvas.height, this.camY));
     }
 
     const ctx = this.ctx;
@@ -233,10 +235,11 @@ export class GameEngine {
         this.coralTreeImg.src = '/assets/coral_tree.png';
       }
       if (this.coralTreeImg.complete && this.coralTreeImg.naturalWidth !== 0) {
-        ctx.drawImage(this.coralTreeImg, 480, 840, 80, 80);
-        ctx.drawImage(this.coralTreeImg, 780, 540, 80, 80);
-        ctx.drawImage(this.coralTreeImg, 1380, 420, 80, 80);
-        ctx.drawImage(this.coralTreeImg, 1920, 600, 80, 80);
+        ctx.drawImage(this.coralTreeImg, 800, 1240, 80, 80);
+        ctx.drawImage(this.coralTreeImg, 1750, 980, 80, 80);
+        ctx.drawImage(this.coralTreeImg, 2500, 780, 80, 80);
+        ctx.drawImage(this.coralTreeImg, 3800, 1060, 80, 80);
+        ctx.drawImage(this.coralTreeImg, 4300, 1240, 80, 80);
       }
     }
 
@@ -314,8 +317,11 @@ export class GameEngine {
     const w = this.minimapCanvas.width;
     const h = this.minimapCanvas.height;
 
-    const scaleX = w / 2400;
-    const scaleY = h / 1200;
+    const mapWidth = mapData.width || 2400;
+    const mapHeight = mapData.height || 1200;
+
+    const scaleX = w / mapWidth;
+    const scaleY = h / mapHeight;
 
     // Update Header Text using cached element
     if (!this.headerEl) {

@@ -24,10 +24,13 @@ idel-wrestler/
 ├── server/
 │   └── server.js            # Node.js + Express + Socket.io Server (30FPS tick, player state broadcast)
 ├── src/
+│   ├── data/
+│   │   ├── maps/            # Designer-friendly Map configurations (town_map.js, index.js)
+│   │   └── npcs/            # Designer-friendly Modular NPC definitions (coral_island.js, index.js)
 │   ├── engine/
-│   │   ├── GameEngine.js    # Canvas rendering loop, parallax background, map elements, player filtering
-│   │   ├── PhysicsEngine.js # Map definitions (platforms, ladders, portals), collision AABB, gravity, jump
-│   │   └── SpriteManager.js # Procedural & Image Sprite drawing (Player knight, Portals, Mobs)
+│   │   ├── GameEngine.js    # Canvas rendering loop, dynamic camera bounds, parallax background, minimap
+│   │   ├── PhysicsEngine.js # Core physics loop, collision AABB, loads MAP_REGISTRY from data/maps
+│   │   └── SpriteManager.js # Paperdoll player rendering, Portals, Mobs, NPC dialog triggers
 │   ├── styles/
 │   │   └── main.css         # Clean dark mode UI overlay & HUD layout
 │   ├── index.html           # Canvas container, minimap overlay, control guide, login modal
@@ -43,29 +46,38 @@ idel-wrestler/
 
 ## 3. Current Engine Architecture & Systems
 
-### 3.1 Multi-Map System (`map1`, `map2`, `map3`)
+### 3.1 Multi-Map System & Dynamic Map Dimensions
+Maps support dynamic dimensions (`width`, `height`), with camera clamping and minimap scaling adapting automatically per map:
 
-Defined in `PhysicsEngine.js`:
-1. **`map1` (🌲 엘니아 수호의 숲 / Theme: `forest`)**
+1. **`map1` (🌲 엘니아 수호의 숲 / Theme: `forest` / 2400x1200)**
    - Blue night sky, dark hill parallax.
    - Portal 1: `x: 450, y: 920` ➔ Target: `map2` (`targetX: 150, targetY: 920`).
-   - Portal 2: `x: 1850, y: 920` ➔ Target: `map4` (`targetX: 200, targetY: 920`).
-2. **`map2` (⛰️ 헤네시스 수련 고원 / Theme: `highland`)**
+   - Portal 2: `x: 1850, y: 920` ➔ Target: `map4` (`targetX: 300, targetY: 1320`).
+2. **`map2` (⛰️ 헤네시스 수련 고원 / Theme: `highland` / 2400x1200)**
    - Purple/sunset sky, dusk mountain parallax.
    - Portal 1: `x: 150, y: 920` ➔ Target: `map1` (`targetX: 450, targetY: 920`).
    - Portal 2: `x: 600, y: 920` ➔ Target: `map3` (`targetX: 150, targetY: 920`).
-   - Portal 3: `x: 1800, y: 920` ➔ Target: `map4` (`targetX: 1100, targetY: 920`).
-3. **`map3` (🌋 지옥 용암 동굴 / Theme: `cave`)**
+   - Portal 3: `x: 1800, y: 920` ➔ Target: `map4` (`targetX: 2400, targetY: 1320`).
+3. **`map3` (🌋 지옥 용암 동굴 / Theme: `cave` / 2400x1200)**
    - Dark lava red cave sky, magma rocks parallax.
    - Portal 1: `x: 150, y: 920` ➔ Target: `map2` (`targetX: 600, targetY: 920`).
-   - Portal 2: `x: 1950, y: 920` ➔ Target: `map4` (`targetX: 2150, targetY: 920`).
-4. **`map4` (🏝️ 코랄 아일랜드 (산호초 섬마을) / Theme: `coral_island`)**
-   - Tropical turquoise ocean gradient, coral reef background parallax, animated seafoam waves.
-   - Golden sand beach ground, wooden pier dock platforms, blue coral tree props.
-   - **NPC**: `🌸 섬마을 소녀 리리아` (x: 740, y: 620). Interactive dialog system popup via `Space` / `KeyE`.
-   - Portal 1: `x: 200, y: 920` ➔ Target: `map1` (`targetX: 1850, targetY: 920`).
-   - Portal 2: `x: 1100, y: 920` ➔ Target: `map2` (`targetX: 1800, targetY: 920`).
-   - Portal 3: `x: 2150, y: 920` ➔ Target: `map3` (`targetX: 1950, targetY: 920`).
+   - Portal 2: `x: 1950, y: 920` ➔ Target: `map4` (`targetX: 4500, targetY: 1320`).
+4. **`map4` (🏝️ 코랄 아일랜드 (산호초 대형 리조트 마을) / Theme: `coral_island` / 4800x1600)**
+   - **Expanded Town Map:** 4800px width × 1600px height grand multi-tiered tropical resort layout.
+   - **Ground Beach Level (y: 1320):** White sand coastline, wooden piers, beach lounge.
+   - **Tier 1 Boardwalk (y: 1060):** Market square featuring `🌸 섬마을 소녀 리리아` (x: 1200, y: 1060).
+   - **Tier 2 Cliff Terrace (y: 860):** Village square featuring `⚓ 해변 촌장 피트` (x: 2400, y: 860).
+   - **Tier 3 Dock Pavilion (y: 1140):** Trading docks featuring `🏴‍☠️ 선장 잭` (x: 3700, y: 1140).
+   - **Portals:** Portal 1 (`x: 300` ➔ `map1`), Portal 2 (`x: 2400` ➔ `map2`), Portal 3 (`x: 4500` ➔ `map3`).
+
+### 3.2 Designer-Friendly Modular NPC Data Structure (`src/data/npcs/`)
+- NPC definitions are completely decoupled from engine logic into modular configuration files:
+  - `src/data/npcs/coral_island.js` (Coral Island Town NPCs)
+  - `src/data/npcs/forest.js` (Elnia Forest NPCs)
+  - `src/data/npcs/highland.js` (Hennesys Highland NPCs)
+  - `src/data/npcs/cave.js` (Lava Cave NPCs)
+  - `src/data/npcs/index.js` (Central registry & designer query API `getNPCsForMap`)
+- Designers can easily open `src/data/npcs/` to add new NPCs, alter dialogues, portraits, titles, or coordinates without modifying engine code.
 
 ### 3.2 Physics & Collision Engine
 - **Gravity:** `0.65`, **Friction:** `0.82`, **Max Speed:** `6.5`, **Jump Force:** `-13.5`.
@@ -107,7 +119,7 @@ Defined in `PhysicsEngine.js`:
 
 1. **Keep it Step-by-Step:** Do not introduce bloated or unnecessary features all at once. Add features incrementally upon user request.
 2. **Always Maintain Context:** Whenever files are added, refactored, or new Socket events are introduced, update this `CONTEXT.md` file immediately before finishing your turn.
-3. **Verification Policy:** Always run `npm run build` and test using `browser_subagent` before concluding any feature additions.
+3. **Verification Policy:** Always run `npm run build` to verify code integrity. DO NOT perform long, repetitive automated browser subagent testing. Simply launch/verify the dev server and hand off to the user immediately for direct browser testing.
 
 ---
 

@@ -1,3 +1,5 @@
+import { MAP_REGISTRY } from '../data/maps/index.js';
+
 export class PhysicsEngine {
   constructor() {
     this.gravity = 0.65;
@@ -5,112 +7,8 @@ export class PhysicsEngine {
     this.maxSpeed = 6.5;
     this.jumpForce = -13.5;
 
-    // Define 3 Maps (Platforms, Ladders, Portals)
-    this.maps = {
-      map1: {
-        id: 'map1',
-        name: '🌲 엘니아 수호의 숲',
-        theme: 'forest',
-        platforms: [
-          { x: 0, y: 920, width: 2400, height: 280, isGround: true },
-          { x: 100, y: 760, width: 450, height: 20 },
-          { x: 580, y: 620, width: 400, height: 20 },
-          { x: 1050, y: 620, width: 400, height: 20 },
-          { x: 1750, y: 560, width: 550, height: 20 },
-          { x: 1300, y: 420, width: 380, height: 20 }
-        ],
-        ladders: [
-          { x: 300, yMin: 760, yMax: 920 },
-          { x: 750, yMin: 620, yMax: 920 },
-          { x: 1200, yMin: 620, yMax: 920 },
-          { x: 1900, yMin: 560, yMax: 920 }
-        ],
-        portals: [
-          { x: 450, y: 920, targetMap: 'map2', targetX: 150, targetY: 920, label: '수련 고원 [W]' },
-          { x: 1850, y: 920, targetMap: 'map4', targetX: 200, targetY: 920, label: '코랄 아일랜드 [W]' }
-        ]
-      },
-      map2: {
-        id: 'map2',
-        name: '⛰️ 헤네시스 수련 고원',
-        theme: 'highland',
-        platforms: [
-          { x: 0, y: 920, width: 2400, height: 280, isGround: true },
-          { x: 200, y: 720, width: 500, height: 20 },
-          { x: 800, y: 540, width: 800, height: 20 },
-          { x: 1700, y: 720, width: 500, height: 20 },
-          { x: 1000, y: 360, width: 400, height: 20 }
-        ],
-        ladders: [
-          { x: 450, yMin: 720, yMax: 920 },
-          { x: 1200, yMin: 540, yMax: 920 },
-          { x: 1950, yMin: 720, yMax: 920 },
-          { x: 1200, yMin: 360, yMax: 540 }
-        ],
-        portals: [
-          { x: 150, y: 920, targetMap: 'map1', targetX: 450, targetY: 920, label: '수호의 숲 [W]' },
-          { x: 600, y: 920, targetMap: 'map3', targetX: 150, targetY: 920, label: '용암 동굴 [W]' },
-          { x: 1800, y: 920, targetMap: 'map4', targetX: 1100, targetY: 920, label: '코랄 아일랜드 [W]' }
-        ]
-      },
-      map3: {
-        id: 'map3',
-        name: '🌋 지옥 용암 동굴',
-        theme: 'cave',
-        platforms: [
-          { x: 0, y: 920, width: 2400, height: 280, isGround: true },
-          { x: 150, y: 780, width: 350, height: 20 },
-          { x: 600, y: 640, width: 350, height: 20 },
-          { x: 1050, y: 500, width: 300, height: 20 },
-          { x: 1450, y: 640, width: 350, height: 20 },
-          { x: 1900, y: 780, width: 350, height: 20 }
-        ],
-        ladders: [
-          { x: 300, yMin: 780, yMax: 920 },
-          { x: 750, yMin: 640, yMax: 920 },
-          { x: 1200, yMin: 500, yMax: 920 },
-          { x: 1600, yMin: 640, yMax: 920 },
-          { x: 2050, yMin: 780, yMax: 920 }
-        ],
-        portals: [
-          { x: 150, y: 920, targetMap: 'map2', targetX: 600, targetY: 920, label: '수련 고원 [W]' },
-          { x: 1950, y: 920, targetMap: 'map4', targetX: 2150, targetY: 920, label: '코랄 아일랜드 [W]' }
-        ]
-      },
-      map4: {
-        id: 'map4',
-        name: '🏝️ 코랄 아일랜드 (산호초 섬마을)',
-        theme: 'coral_island',
-        platforms: [
-          { x: 0, y: 920, width: 2400, height: 280, isGround: true },
-          { x: 120, y: 760, width: 480, height: 20 },
-          { x: 680, y: 620, width: 500, height: 20 },
-          { x: 1280, y: 500, width: 450, height: 20 },
-          { x: 1800, y: 680, width: 520, height: 20 }
-        ],
-        ladders: [
-          { x: 300, yMin: 760, yMax: 920 },
-          { x: 900, yMin: 620, yMax: 920 },
-          { x: 1450, yMin: 500, yMax: 920 },
-          { x: 2000, yMin: 680, yMax: 920 }
-        ],
-        portals: [
-          { x: 200, y: 920, targetMap: 'map1', targetX: 1850, targetY: 920, label: '수호의 숲 [W]' },
-          { x: 1100, y: 920, targetMap: 'map2', targetX: 1800, targetY: 920, label: '수련 고원 [W]' },
-          { x: 2150, y: 920, targetMap: 'map3', targetX: 1950, targetY: 920, label: '용암 동굴 [W]' }
-        ],
-        npcs: [
-          {
-            id: 'npc_coral_girl',
-            name: '🌸 섬마을 소녀 리리아',
-            portrait: '/assets/npc_girl.png',
-            x: 740,
-            y: 620,
-            dialog: '안녕! 여긴 파도소리가 감미로운 코랄 아일랜드야~ 🌊✨ 바다 아래 영롱한 산호 보석들을 구경해보렴!'
-          }
-        ]
-      }
-    };
+    // Load Designer Map Registry (Platforms, Ladders, Portals, NPCs)
+    this.maps = MAP_REGISTRY;
   }
 
   getNearbyNPC(player, mapId = 'map1') {
@@ -212,7 +110,8 @@ export class PhysicsEngine {
     p.x += p.vx * stepRatio;
 
     // Clamp Boundaries
-    p.x = Math.max(20, Math.min(2380, p.x));
+    const mapWidth = mapData.width || 2400;
+    p.x = Math.max(20, Math.min(mapWidth - 20, p.x));
 
     // Apply Gravity
     p.vy += this.gravity * stepRatio;
