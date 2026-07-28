@@ -411,14 +411,21 @@ export class SpriteManager {
     ctx.ellipse(0, 0, 26, 8, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // NPC Sprite Image
-    if (!this.npcGirlImg) {
-      this.npcGirlImg = new Image();
-      this.npcGirlImg.src = '/assets/npc_girl.png';
+    // Dynamic NPC Field Sprite Image Preloading & Caching
+    if (!this.npcFieldSprites) {
+      this.npcFieldSprites = {};
     }
 
-    if (this.npcGirlImg.complete && this.npcGirlImg.naturalWidth !== 0) {
-      ctx.drawImage(this.npcGirlImg, -45, -112 + idleBob, 90, 115);
+    const spritePath = npc.fieldSprite || npc.portrait || '/assets/npc_girl.png';
+    if (!this.npcFieldSprites[npc.id]) {
+      const img = new Image();
+      img.src = spritePath;
+      this.npcFieldSprites[npc.id] = img;
+    }
+
+    const npcImg = this.npcFieldSprites[npc.id];
+    if (npcImg.complete && npcImg.naturalWidth !== 0) {
+      ctx.drawImage(npcImg, -45, -112 + idleBob, 90, 115);
     } else {
       ctx.fillStyle = '#ff7675';
       ctx.beginPath();
@@ -463,4 +470,498 @@ export class SpriteManager {
 
     ctx.restore();
   }
+
+  // ----------------------------------------------------
+  // 🏝️ CORAL ISLAND TOWN GRAPHICS RENDERERS
+  // ----------------------------------------------------
+
+  // 1. Town Landmarks (Lighthouse, Windmill, Pavilion)
+  drawTownLandmark(ctx, lm) {
+    ctx.save();
+    ctx.translate(lm.x, lm.y);
+
+    if (lm.type === 'lighthouse') {
+      // Base shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 45, 12, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Main Lighthouse Tower (Conical tapered structure)
+      const towerHeight = 220;
+      ctx.beginPath();
+      ctx.moveTo(-35, 0);
+      ctx.lineTo(-20, -towerHeight);
+      ctx.lineTo(20, -towerHeight);
+      ctx.lineTo(35, 0);
+      ctx.closePath();
+      ctx.fillStyle = '#f8f9fa';
+      ctx.fill();
+
+      // Red Coral Stripe Bands
+      const stripeHeights = [
+        { y1: -40, y2: -80 },
+        { y1: -120, y2: -160 }
+      ];
+      stripeHeights.forEach(s => {
+        ctx.beginPath();
+        const topRatio1 = (towerHeight + s.y1) / towerHeight;
+        const topRatio2 = (towerHeight + s.y2) / towerHeight;
+        const w1 = 20 + (35 - 20) * topRatio1;
+        const w2 = 20 + (35 - 20) * topRatio2;
+        ctx.moveTo(-w1, s.y1);
+        ctx.lineTo(-w2, s.y2);
+        ctx.lineTo(w2, s.y2);
+        ctx.lineTo(w1, s.y1);
+        ctx.closePath();
+        ctx.fillStyle = '#e74c3c';
+        ctx.fill();
+      });
+
+      // Top Glass Lamp Chamber Platform & Railing
+      ctx.fillStyle = '#2c3e50';
+      ctx.fillRect(-28, -towerHeight - 8, 56, 8);
+      ctx.fillRect(-22, -towerHeight - 40, 44, 32);
+
+      // Glass Glow Window
+      ctx.fillStyle = '#f1c40f';
+      ctx.fillRect(-16, -towerHeight - 34, 32, 22);
+
+      // Conical Roof Peak
+      ctx.beginPath();
+      ctx.moveTo(0, -towerHeight - 65);
+      ctx.lineTo(-26, -towerHeight - 40);
+      ctx.lineTo(26, -towerHeight - 40);
+      ctx.closePath();
+      ctx.fillStyle = '#c0392b';
+      ctx.fill();
+
+      // Rotating Light Beam Effect
+      const beamAngle = this.animTime * 1.2;
+      ctx.save();
+      ctx.translate(0, -towerHeight - 23);
+      ctx.rotate(beamAngle);
+      const lightGrad = ctx.createRadialGradient(0, 0, 5, 0, 0, 180);
+      lightGrad.addColorStop(0, 'rgba(255, 241, 118, 0.8)');
+      lightGrad.addColorStop(0.4, 'rgba(255, 235, 59, 0.35)');
+      lightGrad.addColorStop(1, 'rgba(255, 235, 59, 0)');
+
+      ctx.fillStyle = lightGrad;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.arc(0, 0, 180, -0.25, 0.25);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+    } else if (lm.type === 'windmill') {
+      // Base Shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 40, 10, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Windmill Stone Base Tower
+      const h = 170;
+      ctx.beginPath();
+      ctx.moveTo(-32, 0);
+      ctx.lineTo(-18, -h);
+      ctx.lineTo(18, -h);
+      ctx.lineTo(32, 0);
+      ctx.closePath();
+      ctx.fillStyle = '#7f8c8d';
+      ctx.fill();
+
+      // Stone Bricks Overlay
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.fillRect(-22, -120, 44, 6);
+      ctx.fillRect(-26, -60, 52, 6);
+
+      // Wooden Door & Window
+      ctx.fillStyle = '#4e342e';
+      ctx.fillRect(-8, -35, 16, 35);
+      ctx.fillStyle = '#f39c12';
+      ctx.fillRect(-6, -110, 12, 16);
+
+      // Roof Dome
+      ctx.beginPath();
+      ctx.arc(0, -h, 22, Math.PI, 0);
+      ctx.fillStyle = '#d35400';
+      ctx.fill();
+
+      // Rotating Wooden Windmill Blades
+      const bladeAngle = this.animTime * 0.8;
+      ctx.save();
+      ctx.translate(0, -h + 5);
+      ctx.rotate(bladeAngle);
+
+      ctx.fillStyle = '#f39c12';
+      ctx.beginPath();
+      ctx.arc(0, 0, 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 4 Sail Blades
+      ctx.fillStyle = '#ecf0f1';
+      ctx.strokeStyle = '#5d4037';
+      ctx.lineWidth = 2;
+
+      for (let i = 0; i < 4; i++) {
+        ctx.save();
+        ctx.rotate((i * Math.PI) / 2);
+        ctx.fillRect(4, -6, 75, 18);
+        ctx.strokeRect(4, -6, 75, 18);
+        ctx.restore();
+      }
+      ctx.restore();
+
+    } else if (lm.type === 'pavilion') {
+      // Coastal Lookout Pavilion
+      ctx.fillStyle = '#8d6e63';
+      ctx.fillRect(-65, -8, 130, 8);
+      // Support Pillars
+      ctx.fillRect(-55, -90, 10, 82);
+      ctx.fillRect(45, -90, 10, 82);
+      // Thatched Roof
+      ctx.beginPath();
+      ctx.moveTo(0, -135);
+      ctx.lineTo(-75, -88);
+      ctx.lineTo(75, -88);
+      ctx.closePath();
+      ctx.fillStyle = '#e9c46a';
+      ctx.fill();
+    }
+
+    // Name Label Tag
+    if (lm.label) {
+      ctx.font = 'bold 11px "Noto Sans KR", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(10, 20, 35, 0.85)';
+      ctx.fillRect(-60, -245, 120, 18);
+      ctx.strokeStyle = 'rgba(0, 210, 211, 0.5)';
+      ctx.strokeRect(-60, -245, 120, 18);
+      ctx.fillStyle = '#00d2d3';
+      ctx.fillText(lm.label, 0, -232);
+    }
+
+    ctx.restore();
+  }
+
+  // 2. Town Buildings (Blue-roofed Shops, Juice Bar, Manor)
+  drawTownBuilding(ctx, b) {
+    ctx.save();
+    ctx.translate(b.x, b.y);
+
+    const w = b.width || 200;
+    const h = b.height || 150;
+
+    // Building Drop Shadow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+    ctx.fillRect(-w / 2 + 5, 0, w - 10, 8);
+
+    if (b.type === 'blue_roof_shop') {
+      // Mediterranean White Stucco Walls
+      const wallGrad = ctx.createLinearGradient(0, -h, 0, 0);
+      wallGrad.addColorStop(0, '#ffffff');
+      wallGrad.addColorStop(1, '#e2e8f0');
+      ctx.fillStyle = wallGrad;
+      ctx.fillRect(-w / 2, -h + 35, w, h - 35);
+
+      // Deep Blue Coastal Tiled Roof
+      ctx.beginPath();
+      ctx.moveTo(-w / 2 - 15, -h + 40);
+      ctx.lineTo(-w / 2 + 10, -h);
+      ctx.lineTo(w / 2 - 10, -h);
+      ctx.lineTo(w / 2 + 15, -h + 40);
+      ctx.closePath();
+      ctx.fillStyle = '#0077b6';
+      ctx.fill();
+
+      ctx.fillStyle = '#0096c7';
+      ctx.fillRect(-w / 2 - 15, -h + 35, w + 30, 8);
+
+      // Arched Wooden Door
+      ctx.fillStyle = '#5c3a21';
+      ctx.beginPath();
+      ctx.arc(0, -35, 16, Math.PI, 0);
+      ctx.fillRect(-16, -35, 32, 35);
+      ctx.fill();
+
+      // Windows with Warm Interior Light Glow
+      const winW = 32;
+      const winH = 42;
+      [-w / 3, w / 3].forEach(wx => {
+        ctx.fillStyle = '#2b2d42';
+        ctx.fillRect(wx - winW / 2, -h + 60, winW, winH);
+
+        // Glass Glow
+        ctx.fillStyle = '#ffb703';
+        ctx.fillRect(wx - winW / 2 + 3, -h + 63, winW - 6, winH - 6);
+
+        // Window Frame Lines
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(wx - 1, -h + 60, 2, winH);
+        ctx.fillRect(wx - winW / 2, -h + 80, winW, 2);
+      });
+
+      // Striped Shop Awning
+      const awnY = -h + 105;
+      for (let x = -w / 2 + 10; x < w / 2 - 10; x += 20) {
+        ctx.fillStyle = (Math.floor(x / 20) % 2 === 0) ? '#e74c3c' : '#ffffff';
+        ctx.fillRect(x, awnY, 20, 15);
+      }
+
+    } else if (b.type === 'juice_bar') {
+      // Tropical Open Beach Bar Hut
+      // Wooden Counter
+      ctx.fillStyle = '#8b5a2b';
+      ctx.fillRect(-w / 2, -50, w, 50);
+
+      ctx.fillStyle = '#cd853f';
+      ctx.fillRect(-w / 2 - 8, -55, w + 16, 8);
+
+      // Thatched Roof Posts
+      ctx.fillStyle = '#5c3a21';
+      ctx.fillRect(-w / 2 + 10, -h, 12, h);
+      ctx.fillRect(w / 2 - 22, -h, 12, h);
+
+      // Tropical Straw Thatched Roof
+      ctx.beginPath();
+      ctx.moveTo(0, -h - 25);
+      ctx.lineTo(-w / 2 - 25, -h + 15);
+      ctx.lineTo(w / 2 + 25, -h + 15);
+      ctx.closePath();
+      ctx.fillStyle = '#e9c46a';
+      ctx.fill();
+
+      // Coconut Drinks & Cups on Bar
+      ctx.fillStyle = '#2a9d8f';
+      ctx.fillRect(-30, -70, 10, 15);
+      ctx.fillStyle = '#e74c3c';
+      ctx.fillRect(10, -70, 10, 15);
+
+    } else if (b.type === 'manor') {
+      // Mayor Pete's Grand Stone Manor
+      ctx.fillStyle = '#d4a373';
+      ctx.fillRect(-w / 2, -h + 40, w, h - 40);
+
+      // Terracotta Roof
+      ctx.beginPath();
+      ctx.moveTo(-w / 2 - 20, -h + 45);
+      ctx.lineTo(0, -h - 15);
+      ctx.lineTo(w / 2 + 20, -h + 45);
+      ctx.closePath();
+      ctx.fillStyle = '#b23b18';
+      ctx.fill();
+
+      // Double Arched Manor Door
+      ctx.fillStyle = '#3a2312';
+      ctx.fillRect(-22, -60, 44, 60);
+
+      // Balcony Railing
+      ctx.fillStyle = '#111';
+      ctx.fillRect(-w / 2 + 30, -h + 100, w - 60, 8);
+    }
+
+    // Signboard Label Tag Above Building
+    if (b.label) {
+      ctx.font = 'bold 12px "Noto Sans KR", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(10, 15, 30, 0.9)';
+      ctx.fillRect(-70, -h - 20, 140, 20);
+      ctx.strokeStyle = 'rgba(255, 209, 102, 0.7)';
+      ctx.strokeRect(-70, -h - 20, 140, 20);
+      ctx.fillStyle = '#ffd166';
+      ctx.fillText(b.label, 0, -h - 6);
+    }
+
+    ctx.restore();
+  }
+
+  // 3. Tropical Palm Trees
+  drawPalmTree(ctx, tree) {
+    ctx.save();
+    ctx.translate(tree.x, tree.y);
+    const scale = tree.scale || 1.0;
+    ctx.scale(scale, scale);
+
+    // Tree Trunk (Curved Textured Brown)
+    ctx.strokeStyle = '#6e4726';
+    ctx.lineWidth = 14;
+    ctx.lineCap = 'round';
+
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(15, -60, 5, -130);
+    ctx.stroke();
+
+    // Trunk Ring Segments
+    ctx.strokeStyle = '#422813';
+    ctx.lineWidth = 14;
+    ctx.setLineDash([4, 12]);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(15, -60, 5, -130);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Palm Tree Top Center
+    const topX = 5;
+    const topY = -130;
+    const sway = Math.sin(this.animTime * 2 + tree.x) * 0.08;
+
+    // Coconuts
+    ctx.fillStyle = '#3e2714';
+    ctx.beginPath();
+    ctx.arc(topX - 5, topY + 6, 6, 0, Math.PI * 2);
+    ctx.arc(topX + 5, topY + 8, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Palm Fronds (6 Broad Leaves)
+    ctx.save();
+    ctx.translate(topX, topY);
+    ctx.rotate(sway);
+
+    const leafColors = ['#27ae60', '#2ecc71', '#1e8449'];
+    for (let i = 0; i < 6; i++) {
+      const angle = (i * Math.PI) / 3;
+      ctx.save();
+      ctx.rotate(angle);
+
+      ctx.fillStyle = leafColors[i % 3];
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(35, -25, 75, 10);
+      ctx.quadraticCurveTo(35, 10, 0, 0);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.restore();
+    ctx.restore();
+  }
+
+  // 4. Beach & Town Decorations (Parasols, Boats, Flowerbeds, Signboards)
+  drawTownDecoration(ctx, dec) {
+    ctx.save();
+    ctx.translate(dec.x, dec.y);
+
+    if (dec.type === 'parasol') {
+      // Beach Umbrella & Lounge Chair
+      ctx.fillStyle = '#607d8b';
+      ctx.fillRect(10, -18, 35, 18);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(12, -22, 12, 18);
+
+      // Wooden Umbrella Pole
+      ctx.fillStyle = '#5d4037';
+      ctx.fillRect(-2, -75, 4, 75);
+
+      // Striped Umbrella Canopy
+      ctx.beginPath();
+      ctx.moveTo(0, -90);
+      ctx.lineTo(-45, -70);
+      ctx.lineTo(45, -70);
+      ctx.closePath();
+      ctx.fillStyle = '#e74c3c';
+      ctx.fill();
+
+      // White Stripe Overlay
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.moveTo(0, -90);
+      ctx.lineTo(-15, -70);
+      ctx.lineTo(15, -70);
+      ctx.closePath();
+      ctx.fill();
+
+    } else if (dec.type === 'boat') {
+      // Small Wooden Pier Boat
+      const floatY = Math.sin(this.animTime * 3) * 3;
+      ctx.translate(0, floatY);
+
+      ctx.beginPath();
+      ctx.moveTo(-45, -15);
+      ctx.lineTo(45, -15);
+      ctx.lineTo(30, 10);
+      ctx.lineTo(-30, 10);
+      ctx.closePath();
+      ctx.fillStyle = '#8d6e63';
+      ctx.fill();
+      ctx.strokeStyle = '#4e342e';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+    } else if (dec.type === 'signboard') {
+      // Wooden Welcome Sign Post
+      ctx.fillStyle = '#5c3a21';
+      ctx.fillRect(-4, -55, 8, 55);
+
+      ctx.fillStyle = '#a07855';
+      ctx.fillRect(-65, -55, 130, 32);
+      ctx.strokeStyle = '#3a2312';
+      ctx.strokeRect(-65, -55, 130, 32);
+
+      ctx.font = 'bold 11px "Noto Sans KR", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#fefae0';
+      ctx.fillText(dec.title || '마을 표지판', 0, -35);
+
+    } else if (dec.type === 'flowerbed') {
+      // Garden Flowerbed with Blooming Flowers
+      const w = dec.width || 120;
+      ctx.fillStyle = '#5c3a21';
+      ctx.fillRect(-w / 2, -12, w, 12);
+
+      // Lush Green Leaves
+      ctx.fillStyle = '#2ecc71';
+      ctx.fillRect(-w / 2 + 2, -16, w - 4, 6);
+
+      // Flowers (Red, Yellow, Purple)
+      const colors = ['#e74c3c', '#f1c40f', '#9b59b6'];
+      for (let fx = -w / 2 + 10; fx < w / 2 - 5; fx += 15) {
+        ctx.fillStyle = colors[Math.abs(Math.floor(fx)) % 3];
+        ctx.beginPath();
+        ctx.arc(fx, -20, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+    } else if (dec.type === 'bench') {
+      // Park Bench
+      ctx.fillStyle = '#3e2723';
+      ctx.fillRect(-22, -16, 44, 4);
+      ctx.fillRect(-20, -12, 4, 12);
+      ctx.fillRect(16, -12, 4, 12);
+    }
+
+    ctx.restore();
+  }
+
+  // 5. Street Lantern Posts with Warm Light Bloom
+  drawStreetLantern(ctx, light) {
+    ctx.save();
+    ctx.translate(light.x, light.y);
+
+    // Iron Lamp Post
+    ctx.fillStyle = '#263238';
+    ctx.fillRect(-3, -65, 6, 65);
+    ctx.fillRect(-8, -68, 16, 4);
+
+    // Lamp Glass Top
+    ctx.fillStyle = '#ffb703';
+    ctx.fillRect(-6, -82, 12, 14);
+
+    // Soft Warm Light Bloom (Glow Effect)
+    const glowGrad = ctx.createRadialGradient(0, -75, 2, 0, -75, 45);
+    glowGrad.addColorStop(0, 'rgba(255, 209, 102, 0.6)');
+    glowGrad.addColorStop(0.5, 'rgba(255, 183, 3, 0.25)');
+    glowGrad.addColorStop(1, 'rgba(255, 183, 3, 0)');
+
+    ctx.fillStyle = glowGrad;
+    ctx.beginPath();
+    ctx.arc(0, -75, 45, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
 }
+
