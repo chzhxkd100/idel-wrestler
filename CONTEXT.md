@@ -25,17 +25,19 @@ idel-wrestler/
 │   └── server.js            # Node.js + Express + Socket.io Server (30FPS tick, player state broadcast)
 ├── src/
 │   ├── data/
-│   │   ├── maps/            # Designer-friendly Map configurations (town_map.js, index.js)
+│   │   ├── maps/            # Designer-friendly Map configurations (town_map.js 12,000x2,400px schema, index.js)
 │   │   └── npcs/            # Designer-friendly Modular NPC definitions (coral_island.js, index.js)
 │   ├── engine/
 │   │   ├── GameEngine.js    # Canvas rendering loop, dynamic camera bounds, parallax background, minimap
 │   │   ├── PhysicsEngine.js # Core physics loop, collision AABB, loads MAP_REGISTRY from data/maps
-│   │   └── SpriteManager.js # Paperdoll player rendering, Portals, Mobs, NPC dialog triggers
+│   │   ├── SpriteManager.js # Paperdoll player rendering, Portals, Mobs, NPC dialog & portrait rendering
+│   │   └── TileMapManager.js# Seamless 64x64 tilemap renderer & layer grid management
 │   ├── styles/
 │   │   └── main.css         # Clean dark mode UI overlay & HUD layout
 │   ├── index.html           # Canvas container, minimap overlay, control guide, login modal
 │   └── main.js              # Client entry, Socket.io event listeners, 60FPS physics loop (~20Hz socket emit)
 ├── tools/
+│   ├── generate_town_assets.js # Town map asset & sprite generation utility
 │   └── remove_bg.js         # BFS Flood-Fill Background Removal & Transparent PNG Generator Tool
 ├── package.json             # NPM dependencies & dev scripts
 ├── vite.config.js           # Vite config
@@ -62,17 +64,16 @@ Maps support dynamic dimensions (`width`, `height`), with camera clamping and mi
    - Dark lava red cave sky, magma rocks parallax.
    - Portal 1: `x: 150, y: 920` ➔ Target: `map2` (`targetX: 600, targetY: 920`).
    - Portal 2: `x: 1950, y: 920` ➔ Target: `map4` (`targetX: 4500, targetY: 1320`).
-4. **`map4` (🏝️ 코랄 아일랜드 (산호초 대형 리조트 마을) / Theme: `coral_island` / 4800x1600)**
-   - **Expanded Town Map:** 4800px width × 1600px height grand multi-tiered tropical resort layout.
-   - **Ground Beach Level (y: 1320):** White sand coastline, wooden piers, beach lounge.
-   - **Tier 1 Boardwalk (y: 1060):** Market square featuring `🌸 섬마을 소녀 리리아` (x: 1200, y: 1060).
-   - **Tier 2 Cliff Terrace (y: 860):** Village square featuring `⚓ 해변 촌장 피트` (x: 2400, y: 860).
-   - **Tier 3 Dock Pavilion (y: 1140):** Trading docks featuring `🏴‍☠️ 선장 잭` (x: 3700, y: 1140).
+4. **`map4` (🏰 코랄 아일랜드 메가 메트로폴리스 / Theme: `coral_island` / 12000x2400)**
+   - **Mega Metropolis Map:** 12,000px width × 2,400px height grand 6-level multi-tier tropical metropolis layout.
+   - **TileMap & Assets:** Integrated `TileMapManager` with 39 dedicated PNG assets (tiles, buildings, props, decor, portraits, field sprites).
+   - **Diverse Platform Visual Styles:** Supports 6 platform visual types (`stepping_stone`, `wood_deck`, `stone_terrace`, `mossy_ruins`, `volcanic_ledge`, `floating_crystal`).
+   - **Atmospheric Particle Weather:** Multi-theme floating ambient particles (forest pollen, mountain embers, lava sparks, sea bubbles).
    - **Portals:** Portal 1 (`x: 300` ➔ `map1`), Portal 2 (`x: 2400` ➔ `map2`), Portal 3 (`x: 4500` ➔ `map3`).
 
 ### 3.2 Designer-Friendly Modular NPC Data Structure (`src/data/npcs/`)
 - NPC definitions are completely decoupled from engine logic into modular configuration files:
-  - `src/data/npcs/coral_island.js` (Coral Island Town NPCs)
+  - `src/data/npcs/coral_island.js` (6 NPCs: 항해사 카엘, 마을 안내원 리리아, 챔피언 칼, 해변 촌장 피트, 달빛 상인 루나, 천문학자 아스트로)
   - `src/data/npcs/forest.js` (Elnia Forest NPCs)
   - `src/data/npcs/highland.js` (Hennesys Highland NPCs)
   - `src/data/npcs/cave.js` (Lava Cave NPCs)

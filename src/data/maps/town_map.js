@@ -125,22 +125,28 @@ export const TOWN_MAP_CONFIG = {
   // ----------------------------------------------------
   platforms: [
     // 12,000px 메인 지상 바닥 (Level 2)
-    { x: 0, y: 1800, width: 12000, height: 600, isGround: true },
+    { x: 0, y: 1800, width: 12000, height: 600, isGround: true, style: 'coral_beach_ground' },
 
     // Level 1: 해저 침몰선 트렌치 바닥
-    { x: 8800, y: 2100, width: 1400, height: 300 },
+    { x: 8800, y: 2100, width: 1400, height: 300, style: 'sea_trench' },
 
-    // Level 3: 1차 공중 보드워크
-    { x: 1800, y: 1450, width: 2700, height: 24 },
+    // Level 3: 1차 공중 무역 보드워크 & 해풍 징검다리
+    { x: 1400, y: 1620, width: 150, height: 22, style: 'wood_dock' },
+    { x: 1600, y: 1530, width: 150, height: 22, style: 'wood_dock' },
+    { x: 1800, y: 1450, width: 2700, height: 24, style: 'wood_dock' },
 
-    // Level 4: 2차 절벽 테라스 & 현수교
-    { x: 4800, y: 1100, width: 3200, height: 24 },
+    // Level 4: 2차 절벽 테라스 & 공중 현수교 구름다리
+    { x: 4600, y: 1280, width: 140, height: 22, style: 'stepping_stone' },
+    { x: 4800, y: 1100, width: 3200, height: 24, style: 'stone_terrace' },
 
-    // Level 5: 3차 로열 성곽 테라스
-    { x: 6500, y: 750, width: 3000, height: 24 },
+    // Level 5: 3차 로열 산호 왕국 성곽 테라스 & 발코니
+    { x: 6300, y: 920, width: 140, height: 22, style: 'stepping_stone' },
+    { x: 6500, y: 750, width: 3000, height: 24, style: 'terrace_brick' },
 
-    // Level 6: 4차 최고봉 천문대 스카이웨이
-    { x: 9800, y: 400, width: 1700, height: 24 }
+    // Level 6: 4차 최고봉 천문대 스카이웨이 & 공중 부유섬
+    { x: 9600, y: 570, width: 150, height: 22, style: 'floating_sky_island' },
+    { x: 9800, y: 400, width: 1700, height: 24, style: 'floating_sky_island' },
+    { x: 11600, y: 550, width: 150, height: 22, style: 'stepping_stone' }
   ],
 
   // 6단계 높이를 누비는 입체 사다리 네트워크

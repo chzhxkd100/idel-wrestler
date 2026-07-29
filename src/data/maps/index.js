@@ -12,18 +12,26 @@ export const MAP_REGISTRY = {
     width: 2400,
     height: 1200,
     platforms: [
-      { x: 0, y: 920, width: 2400, height: 280, isGround: true },
-      { x: 100, y: 760, width: 450, height: 20 },
-      { x: 580, y: 620, width: 400, height: 20 },
-      { x: 1050, y: 620, width: 400, height: 20 },
-      { x: 1750, y: 560, width: 550, height: 20 },
-      { x: 1300, y: 420, width: 380, height: 20 }
+      { x: 0, y: 920, width: 2400, height: 280, isGround: true, style: 'grass_ground' },
+      // 층계형 징검다리 디딤돌 (Stepping Stones)
+      { x: 120, y: 810, width: 110, height: 22, style: 'stepping_stone' },
+      { x: 260, y: 740, width: 120, height: 22, style: 'stepping_stone' },
+      { x: 410, y: 670, width: 140, height: 22, style: 'wood_deck' },
+      // 나무 가지 루스트 & 이끼 낀 유적 (Mossy Ruins & Tree Roosts)
+      { x: 600, y: 600, width: 280, height: 24, style: 'mossy_ruins' },
+      { x: 920, y: 540, width: 130, height: 22, style: 'stepping_stone' },
+      { x: 1080, y: 480, width: 140, height: 22, style: 'stepping_stone' },
+      { x: 1260, y: 420, width: 340, height: 24, style: 'wood_deck' },
+      // 오른쪽 망루 고공 테라스 (Watchtower Terrace)
+      { x: 1680, y: 580, width: 220, height: 24, style: 'mossy_ruins' },
+      { x: 1940, y: 650, width: 150, height: 22, style: 'stepping_stone' },
+      { x: 2120, y: 740, width: 180, height: 22, style: 'wood_deck' }
     ],
     ladders: [
-      { x: 300, yMin: 760, yMax: 920 },
-      { x: 750, yMin: 620, yMax: 920 },
-      { x: 1200, yMin: 620, yMax: 920 },
-      { x: 1900, yMin: 560, yMax: 920 }
+      { x: 480, yMin: 670, yMax: 920 },
+      { x: 740, yMin: 600, yMax: 920 },
+      { x: 1420, yMin: 420, yMax: 920 },
+      { x: 1780, yMin: 580, yMax: 920 }
     ],
     portals: [
       { x: 450, y: 920, targetMap: 'map2', targetX: 150, targetY: 920, label: '수련 고원 [W]' },
@@ -38,17 +46,24 @@ export const MAP_REGISTRY = {
     width: 2400,
     height: 1200,
     platforms: [
-      { x: 0, y: 920, width: 2400, height: 280, isGround: true },
-      { x: 200, y: 720, width: 500, height: 20 },
-      { x: 800, y: 540, width: 800, height: 20 },
-      { x: 1700, y: 720, width: 500, height: 20 },
-      { x: 1000, y: 360, width: 400, height: 20 }
+      { x: 0, y: 920, width: 2400, height: 280, isGround: true, style: 'highland_ground' },
+      // 고원 테라스 & 계단 디딤돌 (Highland Stone Terraces)
+      { x: 180, y: 780, width: 220, height: 24, style: 'stone_terrace' },
+      { x: 440, y: 700, width: 120, height: 22, style: 'stepping_stone' },
+      { x: 600, y: 620, width: 140, height: 22, style: 'stepping_stone' },
+      // 수련장 메인 정자 발판 (Highland Pavilion)
+      { x: 800, y: 520, width: 800, height: 26, style: 'stone_terrace' },
+      { x: 1000, y: 360, width: 400, height: 24, style: 'sky_deck' },
+      // 우측 절벽 디딤돌 (Cliff Terraces)
+      { x: 1650, y: 620, width: 140, height: 22, style: 'stepping_stone' },
+      { x: 1830, y: 700, width: 160, height: 22, style: 'stepping_stone' },
+      { x: 2020, y: 780, width: 240, height: 24, style: 'stone_terrace' }
     ],
     ladders: [
-      { x: 450, yMin: 720, yMax: 920 },
-      { x: 1200, yMin: 540, yMax: 920 },
-      { x: 1950, yMin: 720, yMax: 920 },
-      { x: 1200, yMin: 360, yMax: 540 }
+      { x: 280, yMin: 780, yMax: 920 },
+      { x: 1200, yMin: 520, yMax: 920 },
+      { x: 1200, yMin: 360, yMax: 520 },
+      { x: 2140, yMin: 780, yMax: 920 }
     ],
     portals: [
       { x: 150, y: 920, targetMap: 'map1', targetX: 450, targetY: 920, label: '수호의 숲 [W]' },
@@ -64,19 +79,26 @@ export const MAP_REGISTRY = {
     width: 2400,
     height: 1200,
     platforms: [
-      { x: 0, y: 920, width: 2400, height: 280, isGround: true },
-      { x: 150, y: 780, width: 350, height: 20 },
-      { x: 600, y: 640, width: 350, height: 20 },
-      { x: 1050, y: 500, width: 300, height: 20 },
-      { x: 1450, y: 640, width: 350, height: 20 },
-      { x: 1900, y: 780, width: 350, height: 20 }
+      { x: 0, y: 920, width: 2400, height: 280, isGround: true, style: 'basalt_ground' },
+      // 용암 위를 가로지르는 징검다리와 크리스탈 발판 (Volcanic Ledges & Floating Crystals)
+      { x: 150, y: 800, width: 180, height: 24, style: 'volcanic_ledge' },
+      { x: 380, y: 730, width: 110, height: 22, style: 'stepping_stone' },
+      { x: 530, y: 660, width: 220, height: 24, style: 'volcanic_ledge' },
+      // 중앙 마그마 제단 크리스탈 (Magma Altar Crystal)
+      { x: 800, y: 580, width: 110, height: 22, style: 'floating_crystal' },
+      { x: 960, y: 490, width: 480, height: 26, style: 'floating_crystal' },
+      { x: 1490, y: 580, width: 110, height: 22, style: 'floating_crystal' },
+      // 우측 용암 절벽 (Right Volcanic Cliffs)
+      { x: 1650, y: 660, width: 220, height: 24, style: 'volcanic_ledge' },
+      { x: 1910, y: 730, width: 110, height: 22, style: 'stepping_stone' },
+      { x: 2060, y: 800, width: 180, height: 24, style: 'volcanic_ledge' }
     ],
     ladders: [
-      { x: 300, yMin: 780, yMax: 920 },
-      { x: 750, yMin: 640, yMax: 920 },
-      { x: 1200, yMin: 500, yMax: 920 },
-      { x: 1600, yMin: 640, yMax: 920 },
-      { x: 2050, yMin: 780, yMax: 920 }
+      { x: 240, yMin: 800, yMax: 920 },
+      { x: 640, yMin: 660, yMax: 920 },
+      { x: 1200, yMin: 490, yMax: 920 },
+      { x: 1760, yMin: 660, yMax: 920 },
+      { x: 2150, yMin: 800, yMax: 920 }
     ],
     portals: [
       { x: 150, y: 920, targetMap: 'map2', targetX: 600, targetY: 920, label: '수련 고원 [W]' },

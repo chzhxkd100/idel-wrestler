@@ -493,72 +493,130 @@ export class GameEngine {
         }
 
       } else {
-        // --- ELEVATED PLATFORMS (WOODEN BOARDWALK / STONE LEDGES) ---
-        if (theme === 'coral_island' || theme === 'forest') {
-          // Wooden Boardwalk Deck Design
+        // --- ELEVATED DIVERSE PLATFORMS & STEPPING STONES ---
+        const style = p.style || (theme === 'cave' ? 'volcanic_ledge' : theme === 'highland' ? 'stone_terrace' : 'wood_deck');
+
+        if (style === 'stepping_stone') {
+          // 3D Carved Stepping Stone
+          ctx.fillStyle = '#1c2833';
+          ctx.fillRect(p.x, p.y + p.height - 4, p.width, 4); // Shadow underside
+
+          const stoneGrad = ctx.createLinearGradient(0, p.y, 0, p.y + p.height);
+          stoneGrad.addColorStop(0, '#5d6d7e');
+          stoneGrad.addColorStop(1, '#2c3e50');
+          ctx.fillStyle = stoneGrad;
+          ctx.fillRect(p.x, p.y, p.width, p.height - 4);
+
+          // Top Bevel & Cap Highlight
+          ctx.fillStyle = '#abb2b9';
+          ctx.fillRect(p.x, p.y, p.width, 4);
+          ctx.fillStyle = 'rgba(255,255,255,0.4)';
+          ctx.fillRect(p.x, p.y, p.width, 1);
+
+        } else if (style === 'floating_crystal' || style === 'floating_sky_island') {
+          // Floating Sky Island / Crystal Platform
+          ctx.fillStyle = '#2c3e50';
+          ctx.fillRect(p.x, p.y, p.width, p.height);
+
+          // Glowing Magical Rune Core
+          const crystalGlow = Math.sin(this.spriteMgr.animTime * 4) * 0.3 + 0.7;
+          ctx.fillStyle = `rgba(0, 210, 211, ${crystalGlow})`;
+          ctx.fillRect(p.x, p.y, p.width, 4);
+
+          // Hanging Crystal Spike Underneath
+          ctx.fillStyle = '#00d2d3';
+          ctx.beginPath();
+          ctx.moveTo(p.x + p.width / 2 - 12, p.y + p.height);
+          ctx.lineTo(p.x + p.width / 2, p.y + p.height + 18);
+          ctx.lineTo(p.x + p.width / 2 + 12, p.y + p.height);
+          ctx.closePath();
+          ctx.fill();
+
+        } else if (style === 'volcanic_ledge') {
+          // Volcanic Basalt Ledge with Magma Veins
+          ctx.fillStyle = '#1a0d0d';
+          ctx.fillRect(p.x, p.y, p.width, p.height);
+
+          ctx.fillStyle = '#e74c3c';
+          ctx.fillRect(p.x, p.y, p.width, 4);
+          ctx.fillStyle = '#f39c12';
+          ctx.fillRect(p.x, p.y, p.width, 2);
+
+          // Lava Drips Underneath
+          for (let lx = p.x + 15; lx < p.x + p.width - 10; lx += 45) {
+            ctx.fillStyle = '#e74c3c';
+            ctx.fillRect(lx, p.y + p.height, 4, 6 + ((lx * 7) % 8));
+          }
+
+        } else if (style === 'mossy_ruins') {
+          // Ancient Mossy Stone Ruins
+          ctx.fillStyle = '#34495e';
+          ctx.fillRect(p.x, p.y, p.width, p.height);
+
+          // Moss Cap & Ivy Vines
+          ctx.fillStyle = '#27ae60';
+          ctx.fillRect(p.x, p.y, p.width, 5);
+          ctx.fillStyle = '#2ecc71';
+          ctx.fillRect(p.x, p.y, p.width, 2);
+
+          // Vines
+          for (let vx = p.x + 20; vx < p.x + p.width - 15; vx += 50) {
+            ctx.fillStyle = '#27ae60';
+            ctx.fillRect(vx, p.y + p.height, 3, 10 + ((vx * 13) % 12));
+          }
+
+        } else if (style === 'stone_terrace' || style === 'terrace_brick') {
+          // Carved Granite / Marble Terrace with Gold Trim
+          const stoneGrad = ctx.createLinearGradient(0, p.y, 0, p.y + p.height);
+          stoneGrad.addColorStop(0, '#ebedef');
+          stoneGrad.addColorStop(1, '#bdc3c7');
+          ctx.fillStyle = stoneGrad;
+          ctx.fillRect(p.x, p.y, p.width, p.height);
+
+          ctx.fillStyle = '#f1c40f'; // Gold Trim
+          ctx.fillRect(p.x, p.y, p.width, 3);
+          ctx.fillStyle = '#7f8c8d';
+          ctx.fillRect(p.x, p.y + p.height - 3, p.width, 3);
+
+          // Carved Pillar Support Underneath
+          const pillarSpacing = 120;
+          for (let px = p.x + 20; px < p.x + p.width - 15; px += pillarSpacing) {
+            ctx.fillStyle = '#d5dbdb';
+            ctx.fillRect(px, p.y + p.height, 14, 20);
+            ctx.fillStyle = '#95a5a6';
+            ctx.fillRect(px + 10, p.y + p.height, 4, 20);
+          }
+
+        } else {
+          // Default: Wooden Deck with Planks, Iron Rivets & Support Stilts
           ctx.fillStyle = '#5c3a21';
           ctx.fillRect(p.x, p.y, p.width, p.height);
 
-          // Individual Wooden Planks & Seams
           const plankWidth = 40;
           for (let x = p.x; x < p.x + p.width; x += plankWidth) {
             const currentW = Math.min(plankWidth, p.x + p.width - x);
-            
-            // Plank Surface
+
             ctx.fillStyle = '#8b5a2b';
             ctx.fillRect(x + 1, p.y + 1, currentW - 2, p.height - 2);
 
-            // Plank Top Highlight
             ctx.fillStyle = '#b0753c';
             ctx.fillRect(x + 1, p.y + 1, currentW - 2, 3);
 
-            // Plank Seam Line
             ctx.fillStyle = '#3a2312';
             ctx.fillRect(x, p.y, 2, p.height);
 
-            // Metallic Peg / Nail Dots
             ctx.fillStyle = '#222';
-            ctx.fillRect(x + 5, p.y + 5, 2, 2);
-            ctx.fillRect(x + currentW - 7, p.y + 5, 2, 2);
+            ctx.fillRect(x + 4, p.y + 4, 2, 2);
+            ctx.fillRect(x + currentW - 6, p.y + 4, 2, 2);
           }
 
-          // Tropical Cyan Water Glow Edge for Coral Island
-          if (theme === 'coral_island') {
-            ctx.fillStyle = '#00f5d4';
-            ctx.fillRect(p.x, p.y, p.width, 2);
-          }
-
-          // Wooden Support Stilts / Beams Under Platforms
-          ctx.fillStyle = '#422815';
-          const beamSpacing = 120;
-          for (let bx = p.x + 30; bx < p.x + p.width - 20; bx += beamSpacing) {
-            ctx.fillRect(bx, p.y + p.height, 12, 25);
-            ctx.fillStyle = 'rgba(0,0,0,0.3)';
-            ctx.fillRect(bx + 12, p.y + p.height, 4, 25);
+          // Support Beams Underneath
+          for (let bx = p.x + 25; bx < p.x + p.width - 15; bx += 110) {
             ctx.fillStyle = '#422815';
+            ctx.fillRect(bx, p.y + p.height, 12, 22);
+            ctx.fillStyle = 'rgba(0,0,0,0.35)';
+            ctx.fillRect(bx + 10, p.y + p.height, 3, 22);
           }
-
-        } else if (theme === 'cave') {
-          // Dark Volcanic Rock Ledge
-          ctx.fillStyle = '#231818';
-          ctx.fillRect(p.x, p.y, p.width, p.height);
-
-          ctx.fillStyle = '#8a2b2b';
-          ctx.fillRect(p.x, p.y, p.width, 5);
-
-          ctx.fillStyle = '#ff4d4d';
-          ctx.fillRect(p.x, p.y, p.width, 2);
-
-        } else {
-          // Standard Mountain Wooden Ledge
-          ctx.fillStyle = '#4a3324';
-          ctx.fillRect(p.x, p.y, p.width, p.height);
-
-          ctx.fillStyle = '#78533b';
-          ctx.fillRect(p.x, p.y, p.width, 5);
-
-          ctx.fillStyle = '#d35400';
-          ctx.fillRect(p.x, p.y, p.width, 2);
         }
       }
     });
