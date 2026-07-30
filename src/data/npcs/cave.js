@@ -6,7 +6,7 @@ export const CAVE_NPCS = [
     id: 'npc_cave_joe',
     name: '⛏️ 동굴 광부 조',
     title: '베테랑 광부',
-    portrait: '/assets/npc_girl.png',
+    portrait: '/assets/portraits/portrait_liria.png',
     mapId: 'map3',
     x: 1200,
     y: 920,

@@ -6,7 +6,7 @@ export const HIGHLAND_NPCS = [
     id: 'npc_highland_ken',
     name: '🥋 무술 사부 켄',
     title: '고원 수련 교관',
-    portrait: '/assets/npc_girl.png',
+    portrait: '/assets/portraits/portrait_liria.png',
     mapId: 'map2',
     x: 1200,
     y: 920,

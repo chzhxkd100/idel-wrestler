@@ -66,7 +66,7 @@ Maps support dynamic dimensions (`width`, `height`), with camera clamping and mi
    - Portal 2: `x: 1950, y: 920` ➔ Target: `map4` (`targetX: 4500, targetY: 1320`).
 4. **`map4` (🏰 코랄 아일랜드 메가 메트로폴리스 / Theme: `coral_island` / 12000x2400)**
    - **Mega Metropolis Map:** 12,000px width × 2,400px height grand 6-level multi-tier tropical metropolis layout.
-   - **TileMap & Assets:** Integrated `TileMapManager` with 39 dedicated PNG assets (tiles, buildings, props, decor, portraits, field sprites).
+   - **TileMap & Assets:** Integrated `TileMapManager` with 39 dedicated PNG assets (tiles, buildings, props, decor, portraits, field sprites). Legacy unused assets (`coral_tree.png`, `npc_girl.png`) purged (~2MB reduced), default NPC fallback portrait updated to `/assets/portraits/portrait_liria.png`.
    - **Diverse Platform Visual Styles:** Supports 6 platform visual types (`stepping_stone`, `wood_deck`, `stone_terrace`, `mossy_ruins`, `volcanic_ledge`, `floating_crystal`).
    - **Atmospheric Particle Weather:** Multi-theme floating ambient particles (forest pollen, mountain embers, lava sparks, sea bubbles).
    - **Portals:** Portal 1 (`x: 300` ➔ `map1`), Portal 2 (`x: 2400` ➔ `map2`), Portal 3 (`x: 4500` ➔ `map3`).

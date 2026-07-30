@@ -416,7 +416,7 @@ export class SpriteManager {
       this.npcFieldSprites = {};
     }
 
-    const spritePath = npc.fieldSprite || npc.portrait || '/assets/npc_girl.png';
+    const spritePath = npc.fieldSprite || npc.portrait || '/assets/portraits/portrait_liria.png';
     if (!this.npcFieldSprites[npc.id]) {
       const img = new Image();
       img.src = spritePath;
