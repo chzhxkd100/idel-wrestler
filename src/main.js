@@ -158,8 +158,39 @@ window.addEventListener('keydown', (e) => {
       const npc = engine.physics.getNearbyNPC(engine.localPlayer, currentMapId);
       if (npc && dialogModal) {
         document.getElementById('dialog-name').innerText = npc.name;
-        document.getElementById('dialog-text').innerText = npc.dialog;
         document.getElementById('dialog-portrait').src = npc.portrait;
+
+        const qStatus = engine.questMgr.getNpcQuestStatus(npc.id);
+        const q = engine.questMgr.getCurrentQuest();
+        const actionBox = document.getElementById('dialog-quest-action');
+        const actionBtn = document.getElementById('btn-quest-action');
+
+        if (qStatus === 'available' && q) {
+          document.getElementById('dialog-text').innerText = q.dialogs.initial;
+          actionBox.classList.remove('hidden');
+          actionBtn.innerText = '📜 퀘스트 수락';
+          actionBtn.onclick = (event) => {
+            event.stopPropagation();
+            engine.questMgr.acceptQuest();
+            dialogModal.classList.add('hidden');
+          };
+        } else if (qStatus === 'canComplete' && q) {
+          document.getElementById('dialog-text').innerText = q.dialogs.complete;
+          actionBox.classList.remove('hidden');
+          actionBtn.innerText = '🏆 퀘스트 완료';
+          actionBtn.onclick = (event) => {
+            event.stopPropagation();
+            const reward = engine.questMgr.completeQuest();
+            if (reward) {
+              alert(`🎉 [${q.title}] 완료!\n보상: EXP +${reward.exp}, Gold +${reward.gold}, 칭호: [${reward.title}]`);
+            }
+            dialogModal.classList.add('hidden');
+          };
+        } else {
+          document.getElementById('dialog-text').innerText = npc.dialog;
+          actionBox.classList.add('hidden');
+        }
+
         dialogModal.classList.remove('hidden');
       }
     }
@@ -184,8 +215,10 @@ window.addEventListener('keydown', (e) => {
 // Close dialog when clicked
 const dialogModalEl = document.getElementById('dialog-modal');
 if (dialogModalEl) {
-  dialogModalEl.addEventListener('click', () => {
-    dialogModalEl.classList.add('hidden');
+  dialogModalEl.addEventListener('click', (e) => {
+    if (e.target.id !== 'btn-quest-action') {
+      dialogModalEl.classList.add('hidden');
+    }
   });
 }
 

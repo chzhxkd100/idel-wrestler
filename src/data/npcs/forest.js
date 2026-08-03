@@ -6,6 +6,7 @@ export const FOREST_NPCS = [
     id: 'npc_forest_luna',
     name: '🧚‍♀️ 숲의 요정 루나',
     title: '수호의 요정',
+    type: 'fairy',
     portrait: '/assets/portraits/portrait_liria.png',
     mapId: 'map1',
     x: 1200,

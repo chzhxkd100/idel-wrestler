@@ -1,15 +1,16 @@
 /**
- * NPC Configuration: Lava Cave Map (map3)
+ * NPC Configuration: Cave Map (map3)
  */
 export const CAVE_NPCS = [
   {
-    id: 'npc_cave_joe',
-    name: '⛏️ 동굴 광부 조',
-    title: '베테랑 광부',
-    portrait: '/assets/portraits/portrait_liria.png',
+    id: 'npc_cave_garon',
+    name: '🌋 동굴 기사 가론',
+    title: '용암 연금술 수호자',
+    type: 'alchemist',
+    portrait: '/assets/portraits/portrait_kael.png',
     mapId: 'map3',
     x: 1200,
-    y: 920,
-    dialog: '용암 열기가 뜨거우니 조심하게! 바닥 아래 용암에 떨어지지 않도록 플랫폼을 잘 밟고 이동하게.'
+    y: 490,
+    dialog: '조심하게! 지옥 용암 동굴의 마그마 마수가 제단을 오염시키고 있네. 🌋🧪'
   }
 ];

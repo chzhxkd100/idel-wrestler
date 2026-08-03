@@ -2,6 +2,7 @@ import { SpriteManager } from './SpriteManager.js';
 import { PhysicsEngine } from './PhysicsEngine.js';
 import { AudioManager } from './AudioManager.js';
 import { TileMapManager } from './TileMapManager.js';
+import { QuestManager } from './QuestManager.js';
 
 export class GameEngine {
   constructor(canvas, minimapCanvas) {
@@ -15,6 +16,7 @@ export class GameEngine {
     this.physics = new PhysicsEngine();
     this.audio = new AudioManager();
     this.tileMapMgr = new TileMapManager();
+    this.questMgr = new QuestManager();
 
     this.camX = 0;
     this.camY = 0;
@@ -27,6 +29,9 @@ export class GameEngine {
     this.selfId = null;
     this.localPlayer = null;
     this.players = {};
+
+    // Initial Quest HUD update
+    setTimeout(() => this.questMgr.updateHudTracker(), 500);
   }
 
   resize(w, h) {
@@ -69,28 +74,56 @@ export class GameEngine {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // 1. Draw Parallax Background per theme
+    // 1. Draw Parallax Background per theme (Celestial Moon, Sky Citadel, Parallax Mountains)
     this.drawBackground(ctx, mapData);
 
     ctx.save();
     ctx.translate(-Math.floor(this.camX), -Math.floor(this.camY));
 
-    // 2. Draw Map Elements (Platforms & Ladders)
+    // 2. Draw Back Background Structures (Lava Waterfalls, Gothic Arches)
+    (mapData.lavaFalls || []).forEach(lf => {
+      this.spriteMgr.drawLavaWaterfall(ctx, lf);
+    });
+
+    (mapData.gothicArches || []).forEach(ga => {
+      this.spriteMgr.drawGothicArch(ctx, ga);
+    });
+
+    // 3. Draw Map Elements (Tilemap, Platforms, Ladders)
     this.drawMapElements(ctx, mapData);
 
-    // 3. Draw Portals
+    // 4. Draw Structures & Props (Ancient Pillars, Gargoyles, Crystals, Torches)
+    (mapData.pillars || []).forEach(p => {
+      this.spriteMgr.drawAncientPillar(ctx, p);
+    });
+
+    (mapData.gargoyles || []).forEach(g => {
+      this.spriteMgr.drawGargoyleStatue(ctx, g);
+    });
+
+    (mapData.crystals || []).forEach(c => {
+      this.spriteMgr.drawCrystalCluster(ctx, c);
+    });
+
+    (mapData.torches || []).forEach(t => {
+      this.spriteMgr.drawTorch(ctx, t);
+    });
+
+    // 5. Draw Portals
     (mapData.portals || []).forEach(p => {
       this.spriteMgr.drawPortal(ctx, p);
     });
 
-    // 3.5. Draw NPCs on current map
+    // 6. Draw NPCs on current map with Quest Status
     const nearbyNPC = this.localPlayer ? this.physics.getNearbyNPC(this.localPlayer, currentMapId) : null;
     (mapData.npcs || []).forEach(npc => {
       const isNearby = nearbyNPC && nearbyNPC.id === npc.id;
-      this.spriteMgr.drawNPC(ctx, npc, isNearby);
+      const qStatus = this.questMgr.getNpcQuestStatus(npc.id);
+      this.spriteMgr.drawNPC(ctx, npc, isNearby, qStatus);
     });
 
-    // 4. Draw Players on the same map
+
+    // 7. Draw Players on the same map
     const remotePlayersCount = Object.keys(this.players).length;
     let localPlayerDrawn = false;
 
@@ -125,9 +158,15 @@ export class GameEngine {
       this.spriteMgr.drawPlayer(ctx, this.localPlayer, true);
     }
 
+    // 8. Draw Creeping Atmospheric Ground Mist / Fog
+    this.drawAtmosphericMist(ctx, mapData);
+
     ctx.restore();
 
-    // 5. Draw Minimap & Title
+    // 9. Draw Dynamic Radial Lighting Overlay & Vignette
+    this.drawDynamicLighting(ctx, mapData);
+
+    // 10. Draw Minimap & Title
     this.drawMinimap(mapData);
   }
 
@@ -138,51 +177,57 @@ export class GameEngine {
     const now = Date.now();
 
     if (theme === 'forest') {
-      // 1. Deep Night Sky with Gradient
+      // 1. Deep Night Sky Gradient
       const sky = ctx.createLinearGradient(0, 0, 0, h);
-      sky.addColorStop(0, '#090d16');
-      sky.addColorStop(0.5, '#131b2e');
-      sky.addColorStop(1, '#233252');
+      sky.addColorStop(0, '#05070d');
+      sky.addColorStop(0.4, '#0e1628');
+      sky.addColorStop(1, '#1b263b');
       ctx.fillStyle = sky;
       ctx.fillRect(0, 0, w, h);
 
-      // 2. Stars
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-      for (let i = 0; i < 30; i++) {
+      // 2. Stars & Falling Cosmic Dust
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+      for (let i = 0; i < 40; i++) {
         const starX = (i * 137 + 50) % w;
-        const starY = (i * 93 + 20) % (h * 0.5);
-        const alpha = 0.3 + 0.5 * Math.sin(now * 0.003 + i);
+        const starY = (i * 93 + 20) % (h * 0.55);
+        const alpha = 0.3 + 0.6 * Math.sin(now * 0.003 + i);
         ctx.fillStyle = `rgba(255, 255, 255, ${alpha.toFixed(2)})`;
-        ctx.fillRect(starX, starY, 2, 2);
+        ctx.fillRect(starX, starY, (i % 3 === 0) ? 2.5 : 1.5, (i % 3 === 0) ? 2.5 : 1.5);
       }
 
-      // 3. Far Distant Mountains (Parallax 0.08)
-      ctx.fillStyle = '#0c1220';
+      // 3. Giant Celestial Rune Moon
+      this.drawCelestialMoon(ctx, w * 0.75 - (this.camX * 0.02) % 200, h * 0.22, 75, '#00d2d3');
+
+      // 4. Distant Floating Sky Citadel Silhouettes (Parallax 0.05)
+      this.drawSkyCitadelSilhouette(ctx, w * 0.25 - (this.camX * 0.05), h * 0.45, 0.85);
+
+      // 5. Far Distant Mountains (Parallax 0.08)
+      ctx.fillStyle = '#0a101d';
       ctx.beginPath();
       ctx.moveTo(0, h);
-      for (let x = 0; x <= w + 40; x += 60) {
-        const hillY = h - 320 + Math.sin((x + this.camX * 0.08) * 0.004) * 80 + Math.cos((x + 200) * 0.009) * 30;
+      for (let x = 0; x <= w + 60; x += 60) {
+        const hillY = h - 340 + Math.sin((x + this.camX * 0.08) * 0.004) * 90 + Math.cos((x + 200) * 0.009) * 40;
         ctx.lineTo(x, hillY);
       }
       ctx.lineTo(w, h);
       ctx.closePath();
       ctx.fill();
 
-      // 4. Mid-Ground Forest Canopy Silhouette (Parallax 0.18)
-      ctx.fillStyle = '#162238';
+      // 6. Mid-Ground Forest Canopy Silhouette (Parallax 0.18)
+      ctx.fillStyle = '#141e33';
       ctx.beginPath();
       ctx.moveTo(0, h);
       for (let x = 0; x <= w + 40; x += 40) {
-        const hillY = h - 220 + Math.sin((x + this.camX * 0.18) * 0.008) * 45;
+        const hillY = h - 230 + Math.sin((x + this.camX * 0.18) * 0.008) * 50;
         ctx.lineTo(x, hillY);
       }
       ctx.lineTo(w, h);
       ctx.closePath();
       ctx.fill();
 
-      // 5. Glowing Ambient Fireflies
+      // 7. Glowing Ambient Fireflies
       ctx.fillStyle = '#a3e635';
-      for (let i = 0; i < 15; i++) {
+      for (let i = 0; i < 18; i++) {
         const fx = (i * 211 + now * 0.02) % w;
         const fy = h - 200 - (i * 47 + Math.sin(now * 0.002 + i) * 30) % 300;
         const glow = 2 + Math.sin(now * 0.005 + i) * 1.5;
@@ -194,33 +239,38 @@ export class GameEngine {
       ctx.globalAlpha = 1.0;
 
     } else if (theme === 'highland') {
-      // 1. Sunset Sky Gradient
+      // 1. Twilight / Crimson Sunset Sky Gradient
       const sky = ctx.createLinearGradient(0, 0, 0, h);
-      sky.addColorStop(0, '#21092e');
-      sky.addColorStop(0.4, '#4a154b');
-      sky.addColorStop(0.7, '#7c1c46');
-      sky.addColorStop(1, '#c0392b');
+      sky.addColorStop(0, '#1a0826');
+      sky.addColorStop(0.35, '#3b0d40');
+      sky.addColorStop(0.7, '#6b1442');
+      sky.addColorStop(1, '#ab2a2a');
       ctx.fillStyle = sky;
       ctx.fillRect(0, 0, w, h);
 
-      // 2. Far Mountain Peaks (Parallax 0.1)
-      ctx.fillStyle = '#260a2b';
+      // 2. Giant Blood Moon
+      this.drawCelestialMoon(ctx, w * 0.3 - (this.camX * 0.03) % 200, h * 0.25, 80, '#ff7675');
+
+      // 3. Far Mountain Peaks & Floating Ruins (Parallax 0.1)
+      this.drawSkyCitadelSilhouette(ctx, w * 0.7 - (this.camX * 0.06), h * 0.42, 1.0);
+
+      ctx.fillStyle = '#220826';
       ctx.beginPath();
       ctx.moveTo(0, h);
       for (let x = 0; x <= w + 50; x += 80) {
-        const hillY = h - 340 + Math.sin((x + this.camX * 0.1) * 0.005) * 100;
+        const hillY = h - 360 + Math.sin((x + this.camX * 0.1) * 0.005) * 110;
         ctx.lineTo(x, hillY);
       }
       ctx.lineTo(w, h);
       ctx.closePath();
       ctx.fill();
 
-      // 3. Near Mountain Ridges (Parallax 0.22)
-      ctx.fillStyle = '#3c0f37';
+      // 4. Near Mountain Ridges (Parallax 0.22)
+      ctx.fillStyle = '#360d32';
       ctx.beginPath();
       ctx.moveTo(0, h);
       for (let x = 0; x <= w + 50; x += 50) {
-        const hillY = h - 220 + Math.sin((x + this.camX * 0.22) * 0.007) * 50;
+        const hillY = h - 230 + Math.sin((x + this.camX * 0.22) * 0.007) * 55;
         ctx.lineTo(x, hillY);
       }
       ctx.lineTo(w, h);
@@ -228,20 +278,20 @@ export class GameEngine {
       ctx.fill();
 
     } else if (theme === 'cave') {
-      // 1. Dark Lava Cave Ambient Sky
+      // 1. Dark Volcanic Cave Sky
       const sky = ctx.createLinearGradient(0, 0, 0, h);
-      sky.addColorStop(0, '#060308');
-      sky.addColorStop(0.6, '#180708');
-      sky.addColorStop(1, '#2c0808');
+      sky.addColorStop(0, '#040205');
+      sky.addColorStop(0.6, '#140506');
+      sky.addColorStop(1, '#240606');
       ctx.fillStyle = sky;
       ctx.fillRect(0, 0, w, h);
 
-      // 2. Distant Cave Rock Strata (Parallax 0.15)
-      ctx.fillStyle = '#100506';
+      // 2. Distant Cave Basalt Strata (Parallax 0.15)
+      ctx.fillStyle = '#0d0405';
       ctx.beginPath();
       ctx.moveTo(0, h);
       for (let x = 0; x <= w + 40; x += 60) {
-        const hillY = h - 200 + Math.sin((x + this.camX * 0.15) * 0.012) * 60;
+        const hillY = h - 220 + Math.sin((x + this.camX * 0.15) * 0.012) * 70;
         ctx.lineTo(x, hillY);
       }
       ctx.lineTo(w, h);
@@ -250,9 +300,9 @@ export class GameEngine {
 
       // 3. Rising Lava Sparks / Embers
       ctx.fillStyle = '#ff6b6b';
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 25; i++) {
         const ex = (i * 157 + Math.sin(now * 0.001 + i) * 40) % w;
-        const ey = h - ((now * 0.05 + i * 80) % h);
+        const ey = h - ((now * 0.06 + i * 80) % h);
         const size = 1.5 + (i % 3);
         ctx.globalAlpha = 0.4 + 0.6 * Math.cos(now * 0.003 + i);
         ctx.fillRect(ex, ey, size, size);
@@ -260,7 +310,7 @@ export class GameEngine {
       ctx.globalAlpha = 1.0;
 
     } else if (theme === 'coral_island') {
-      // 1. Tropical Sky & Ocean Gradient
+      // Tropical Ocean Sky
       const sky = ctx.createLinearGradient(0, 0, 0, h);
       sky.addColorStop(0, '#0a2342');
       sky.addColorStop(0.3, '#124559');
@@ -269,7 +319,7 @@ export class GameEngine {
       ctx.fillStyle = sky;
       ctx.fillRect(0, 0, w, h);
 
-      // 2. Distant Islands (Parallax 0.08)
+      // Distant Islands (Parallax 0.08)
       ctx.fillStyle = '#083045';
       ctx.beginPath();
       ctx.moveTo(0, h);
@@ -280,37 +330,157 @@ export class GameEngine {
       ctx.lineTo(w, h);
       ctx.closePath();
       ctx.fill();
-
-      // 3. Near Tropical Hills & Palms Silhouette (Parallax 0.18)
-      ctx.fillStyle = '#0a425e';
-      ctx.beginPath();
-      ctx.moveTo(0, h);
-      for (let x = 0; x <= w + 40; x += 50) {
-        const hillY = h - 180 + Math.sin((x + this.camX * 0.18) * 0.008) * 35;
-        ctx.lineTo(x, hillY);
-      }
-      ctx.lineTo(w, h);
-      ctx.closePath();
-      ctx.fill();
-
-      // 4. Sparkling Ocean Wave Reflection Strips
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-      for (let i = 0; i < 5; i++) {
-        const waveY = h - 160 + i * 24 + Math.sin(now * 0.002 + i * 1.5) * 5;
-        ctx.fillRect(0, waveY, w, 2.5);
-      }
-
-      // 5. Floating Coral Ocean Bubbles
-      ctx.fillStyle = 'rgba(160, 241, 255, 0.4)';
-      for (let i = 0; i < 12; i++) {
-        const bx = (i * 193 + Math.sin(now * 0.0015 + i) * 25) % w;
-        const by = h - ((now * 0.03 + i * 90) % (h * 0.6));
-        const r = 2 + (i % 3);
-        ctx.beginPath();
-        ctx.arc(bx, by, r, 0, Math.PI * 2);
-        ctx.fill();
-      }
     }
+  }
+
+  // 🌕 Draw Giant Celestial Rune Moon in Background
+  drawCelestialMoon(ctx, x, y, radius, runeColor = '#00d2d3') {
+    ctx.save();
+    ctx.translate(x, y);
+
+    const now = Date.now();
+
+    // Outer Atmospheric Radiant Glow Aura
+    const glowGrad = ctx.createRadialGradient(0, 0, radius * 0.8, 0, 0, radius * 2.2);
+    glowGrad.addColorStop(0, 'rgba(255, 255, 255, 0.4)');
+    glowGrad.addColorStop(0.4, 'rgba(0, 210, 211, 0.2)');
+    glowGrad.addColorStop(1, 'rgba(0, 210, 211, 0)');
+    ctx.fillStyle = glowGrad;
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * 2.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Rotating Magic Rune Ring Around Moon
+    ctx.save();
+    ctx.rotate(now * 0.0003);
+    ctx.strokeStyle = runeColor;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([16, 8]);
+    ctx.globalAlpha = 0.45;
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * 1.35, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    // Moon Body Sphere Gradient
+    const moonGrad = ctx.createRadialGradient(-radius * 0.3, -radius * 0.3, radius * 0.1, 0, 0, radius);
+    moonGrad.addColorStop(0, '#ffffff');
+    moonGrad.addColorStop(0.6, '#e2e8f0');
+    moonGrad.addColorStop(0.9, '#94a3b8');
+    moonGrad.addColorStop(1, '#64748b');
+    ctx.fillStyle = moonGrad;
+    ctx.beginPath();
+    ctx.arc(0, 0, radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Craters & Maria Surface Details
+    ctx.fillStyle = 'rgba(71, 85, 105, 0.35)';
+    const craters = [
+      { cx: -radius * 0.3, cy: -radius * 0.2, r: radius * 0.22 },
+      { cx: radius * 0.25, cy: radius * 0.3, r: radius * 0.28 },
+      { cx: radius * 0.4, cy: -radius * 0.35, r: radius * 0.18 },
+      { cx: -radius * 0.45, cy: radius * 0.25, r: radius * 0.15 }
+    ];
+    craters.forEach(c => {
+      ctx.beginPath();
+      ctx.arc(c.cx, c.cy, c.r, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    ctx.restore();
+  }
+
+  // 🏰 Draw Floating Sky Citadel Silhouette
+  drawSkyCitadelSilhouette(ctx, x, y, scale = 1.0) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+
+    ctx.fillStyle = 'rgba(12, 20, 35, 0.7)';
+
+    // Floating Island Rock Base
+    ctx.beginPath();
+    ctx.moveTo(-120, 0);
+    ctx.lineTo(120, 0);
+    ctx.lineTo(70, 75);
+    ctx.lineTo(0, 110);
+    ctx.lineTo(-60, 65);
+    ctx.closePath();
+    ctx.fill();
+
+    // Gothic Castle Towers
+    ctx.fillRect(-90, -90, 30, 90);
+    ctx.fillRect(60, -90, 30, 90);
+    ctx.fillRect(-35, -130, 70, 130);
+
+    // Spire Roofs
+    ctx.beginPath();
+    ctx.moveTo(-105, -90);
+    ctx.lineTo(-75, -145);
+    ctx.lineTo(-45, -90);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(45, -90);
+    ctx.lineTo(75, -145);
+    ctx.lineTo(105, -90);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(-45, -130);
+    ctx.lineTo(0, -200);
+    ctx.lineTo(45, -130);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  // 🌫️ Draw Atmospheric Creeping Ground Mist / Fog Layer
+  drawAtmosphericMist(ctx, mapData) {
+    const w = mapData.width || 2400;
+    const now = Date.now();
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+
+    // Floating Mist Bands along platform height
+    for (let i = 0; i < 4; i++) {
+      const mistX = ((now * 0.02 * (i + 1)) % (w + 400)) - 200;
+      const mistY = 880 + i * 14;
+
+      ctx.beginPath();
+      ctx.ellipse(mistX, mistY, 320, 24, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // 💡 Draw Dynamic Radial Lighting & Vignette Overlay
+  drawDynamicLighting(ctx, mapData) {
+    const w = this.canvas.width;
+    const h = this.canvas.height;
+    const theme = mapData.theme || 'forest';
+
+    if (theme === 'coral_island') return; // Skip dark vignette on bright daytime town map
+
+    ctx.save();
+
+    // Dark Ambient Overlay Color
+    const ambientColor = theme === 'cave' ? 'rgba(8, 3, 5, 0.45)' : 'rgba(5, 10, 22, 0.4)';
+    ctx.fillStyle = ambientColor;
+    ctx.fillRect(0, 0, w, h);
+
+    // Dynamic Corner Vignette
+    const vignetteGrad = ctx.createRadialGradient(w / 2, h / 2, Math.max(w, h) * 0.4, w / 2, h / 2, Math.max(w, h) * 0.75);
+    vignetteGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    vignetteGrad.addColorStop(1, 'rgba(0, 0, 0, 0.65)');
+    ctx.fillStyle = vignetteGrad;
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.restore();
   }
 
   drawMapElements(ctx, mapData) {

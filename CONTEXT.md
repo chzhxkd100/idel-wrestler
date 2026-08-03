@@ -114,11 +114,24 @@ Maps support dynamic dimensions (`width`, `height`), with camera clamping and mi
 - **Camera Lerp:** Camera tracking uses delta-time exponential smoothing (`1 - 0.85^(dt * 60)`).
 - **Minimap:** Displays current map's platforms, blue portal dots, green remote player dots, and glowing yellow local player dot.
 
+### 3.6 Episode 1 Main Story Quests & High-Detail NPC Engine
+- **Main Story Quests (`src/data/quests/main_quest.js` & `QuestManager.js`):**
+  - **Episode 1: "타락한 수호석과 4대 대륙의 전설"**:
+    - Quest 1: `🌲 숲의 서막: 오염된 수호석` (`npc_forest_luna` ➔ `npc_highland_lucas`)
+    - Quest 2: `⛰️ 고원의 시련: 기사의 자격` (`npc_highland_lucas` ➔ `npc_cave_garon`)
+    - Quest 3: `🌋 동굴의 비밀: 마그마 제단 봉인` (`npc_cave_garon` ➔ `npc_pete`)
+    - Quest 4: `🏰 영웅의 탄생: 대도시의 구원자` (`npc_pete` Complete Reward!)
+  - **Quest Tracker HUD (`#quest-tracker`)**: Displays current quest title, state (`[수락 가능]`, `[진행 중]`), and narrative description in top-left overlay.
+  - **Interactive Dialogue Modal**: Features NPC portrait, typing story dialogue, and `[📜 퀘스트 수락]` / `[🏆 퀘스트 완료]` action buttons.
+- **High-Detail Procedural NPC Renderers (`SpriteManager.js`):**
+  - `drawNPC` renders customized 2D fantasy avatars (`fairy` with flapping translucent wings & wand, `knight` with steel plate & red cape, `alchemist` with goggles & potions, `wizard` with robe & crystal staff).
+  - Ground magic aura halos and bouncing overhead Quest Mark Badges (`!` for available, `?` for completion).
+
 ---
 
 ## 4. Guidelines for Future AI Assistants
 
-1. **Keep it Step-by-Step:** Do not introduce bloated or unnecessary features all at once. Add features incrementally upon user request.
+1. **Keep it Step-by-Step:** Do not introduce bloated or unnecessary features all at once. Add features incrementally upon request.
 2. **Always Maintain Context:** Whenever files are added, refactored, or new Socket events are introduced, update this `CONTEXT.md` file immediately before finishing your turn.
 3. **Verification Policy:** Always run `npm run build` to verify code integrity. DO NOT perform long, repetitive automated browser subagent testing. Simply launch/verify the dev server and hand off to the user immediately for direct browser testing.
 
@@ -127,8 +140,11 @@ Maps support dynamic dimensions (`width`, `height`), with camera clamping and mi
 ## 5. Next Planned Roadmap (For Reference)
 
 When requested by the user, features should be added in the following order:
-- [ ] **Phase 1 (Current Done):** Map, Physics (Movement/Ladder/Portal), Multiplayer Sync.
-- [ ] **Phase 2:** Simple Mob Spawner (Static & wandering mobs per map).
-- [ ] **Phase 3:** Basic Attack & Hit Detection (Normal attack key `Z`, Mob damage).
-- [ ] **Phase 4:** EXP / Level System & Basic UI Stats HUD.
-- [ ] **Phase 5:** Simple Inventory / Item Drops.
+- [x] **Phase 1 (Done):** Map, Physics (Movement/Ladder/Portal), Multiplayer Sync & High/Dark Fantasy Visual Engine.
+- [x] **Phase 2 (Done):** Episode 1 Main Story Questline, Quest Tracker HUD & High-Detail Fantasy NPC Renderer.
+- [ ] **Phase 3:** Simple Mob Spawner (Static & wandering mobs per map).
+- [ ] **Phase 4:** Basic Attack & Hit Detection (Normal attack key `Z`, Mob damage).
+- [ ] **Phase 5:** EXP / Level System & Basic UI Stats HUD.
+- [ ] **Phase 6:** Simple Inventory / Item Drops.
+
+

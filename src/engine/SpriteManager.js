@@ -398,57 +398,197 @@ export class SpriteManager {
     ctx.restore();
   }
 
-  // Draw NPC Character & Name / Prompt Tag
-  drawNPC(ctx, npc, isNearby) {
+  // Draw NPC Character & Name / Prompt Tag & Quest Marks
+  drawNPC(ctx, npc, isNearby, questStatus = null) {
     ctx.save();
     ctx.translate(npc.x, npc.y);
 
-    const idleBob = Math.sin(this.animTime * 3) * 2;
+    const idleBob = Math.sin(this.animTime * 3) * 3;
+    const now = Date.now();
+
+    // 1. Ground Magic Aura Halo
+    const haloGlow = Math.sin(this.animTime * 4) * 0.15 + 0.85;
+    const haloGrad = ctx.createRadialGradient(0, 0, 5, 0, 0, 36);
+    haloGrad.addColorStop(0, 'rgba(0, 210, 211, 0.5)');
+    haloGrad.addColorStop(0.6, 'rgba(0, 210, 211, 0.15)');
+    haloGrad.addColorStop(1, 'rgba(0, 210, 211, 0)');
+    ctx.fillStyle = haloGrad;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 36 * haloGlow, 12 * haloGlow, 0, 0, Math.PI * 2);
+    ctx.fill();
 
     // Shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
     ctx.beginPath();
     ctx.ellipse(0, 0, 26, 8, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Dynamic NPC Field Sprite Image Preloading & Caching
-    if (!this.npcFieldSprites) {
-      this.npcFieldSprites = {};
-    }
+    // 2. High-Detail Fantasy Character Rendering
+    ctx.save();
+    ctx.translate(0, idleBob);
 
-    const spritePath = npc.fieldSprite || npc.portrait || '/assets/portraits/portrait_liria.png';
-    if (!this.npcFieldSprites[npc.id]) {
-      const img = new Image();
-      img.src = spritePath;
-      this.npcFieldSprites[npc.id] = img;
-    }
-
-    const npcImg = this.npcFieldSprites[npc.id];
-    if (npcImg.complete && npcImg.naturalWidth !== 0) {
-      ctx.drawImage(npcImg, -45, -112 + idleBob, 90, 115);
-    } else {
-      ctx.fillStyle = '#ff7675';
+    if (npc.type === 'fairy') {
+      // 🧚‍♀️ Animated Fairy Wing & Magic Wand
+      const wingSway = Math.sin(this.animTime * 12) * 0.25;
+      
+      // Translucent Wings
+      ctx.fillStyle = 'rgba(160, 241, 255, 0.65)';
+      ctx.save();
+      ctx.rotate(-0.2 + wingSway);
       ctx.beginPath();
-      ctx.arc(0, -45 + idleBob, 20, 0, Math.PI * 2);
+      ctx.ellipse(-24, -55, 22, 10, -0.4, 0, Math.PI * 2);
       ctx.fill();
+      ctx.restore();
+
+      ctx.save();
+      ctx.rotate(0.2 - wingSway);
+      ctx.beginPath();
+      ctx.ellipse(24, -55, 22, 10, 0.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Fairy Body Tunic
+      ctx.fillStyle = '#2ecc71';
+      ctx.fillRect(-10, -42, 20, 26);
+      ctx.fillStyle = '#ab47bc';
+      ctx.fillRect(-12, -45, 24, 8);
+
+      // Head Skin & Flower Crown
+      ctx.fillStyle = '#ffdbac';
+      ctx.beginPath();
+      ctx.arc(0, -56, 12, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ff7675';
+      ctx.fillRect(-10, -66, 20, 4);
+
+      // Magic Wand
+      ctx.fillStyle = '#f1c40f';
+      ctx.fillRect(12, -62, 3, 30);
+      ctx.beginPath();
+      ctx.arc(13.5, -64, 6, 0, Math.PI * 2);
+      ctx.fill();
+
+    } else if (npc.type === 'knight') {
+      // ⚔️ Knight Champion Armor & Swaying Cape
+      const capeSway = Math.sin(this.animTime * 3) * 6;
+      ctx.fillStyle = '#c0392b';
+      ctx.beginPath();
+      ctx.moveTo(-14, -52);
+      ctx.lineTo(-24 + capeSway, -10);
+      ctx.lineTo(24 + capeSway, -10);
+      ctx.lineTo(14, -52);
+      ctx.closePath();
+      ctx.fill();
+
+      // Steel Plate Armor
+      ctx.fillStyle = '#34495e';
+      ctx.fillRect(-14, -50, 28, 30);
+      ctx.fillStyle = '#f1c40f';
+      ctx.fillRect(-4, -46, 8, 20);
+
+      // Helmet
+      ctx.fillStyle = '#7f8c8d';
+      ctx.fillRect(-12, -72, 24, 22);
+      ctx.fillStyle = '#111';
+      ctx.fillRect(-8, -64, 16, 4);
+
+    } else if (npc.type === 'alchemist') {
+      // 🌋 Lava Alchemist / Dwarf
+      ctx.fillStyle = '#8e44ad';
+      ctx.fillRect(-14, -40, 28, 24);
+      ctx.fillStyle = '#d35400';
+      ctx.fillRect(-16, -42, 32, 6);
+
+      // Goggles Head
+      ctx.fillStyle = '#ffdbac';
+      ctx.beginPath();
+      ctx.arc(0, -50, 11, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#e74c3c';
+      ctx.fillRect(-8, -54, 16, 5);
+
+    } else {
+      // Default Town NPC Sprite Image Preloading
+      if (!this.npcFieldSprites) this.npcFieldSprites = {};
+      const spritePath = npc.fieldSprite || npc.portrait || '/assets/portraits/portrait_liria.png';
+      if (!this.npcFieldSprites[npc.id]) {
+        const img = new Image();
+        img.src = spritePath;
+        this.npcFieldSprites[npc.id] = img;
+      }
+
+      const npcImg = this.npcFieldSprites[npc.id];
+      if (npcImg.complete && npcImg.naturalWidth !== 0) {
+        ctx.drawImage(npcImg, -45, -112, 90, 115);
+      } else {
+        // High-detail default adventurer fallback
+        ctx.fillStyle = '#e67e22';
+        ctx.fillRect(-12, -45, 24, 28);
+        ctx.fillStyle = '#ffdbac';
+        ctx.beginPath();
+        ctx.arc(0, -55, 12, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+
+    // 3. Quest Status Mark Badges Overhead ('!' or '?')
+    if (questStatus) {
+      const qBob = Math.sin(this.animTime * 8) * 4;
+      ctx.save();
+      ctx.translate(0, -95 + idleBob + qBob);
+
+      if (questStatus === 'available') {
+        // Amber Glowing '!' Badge
+        ctx.fillStyle = 'rgba(255, 170, 0, 0.95)';
+        ctx.beginPath();
+        ctx.arc(0, 0, 14, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = '#111111';
+        ctx.font = 'black 16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('!', 0, 5);
+
+      } else if (questStatus === 'canComplete') {
+        // Green Glowing '?' Badge
+        ctx.fillStyle = 'rgba(46, 204, 113, 0.95)';
+        ctx.beginPath();
+        ctx.arc(0, 0, 14, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'black 16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('?', 0, 5);
+      }
+      ctx.restore();
     }
 
-    // Name Tag Box
+    // 4. Name Tag Box
     ctx.font = 'bold 12px "Noto Sans KR", sans-serif';
     ctx.textAlign = 'center';
     
-    const tagW = 135;
+    const tagW = 140;
     const tagH = 20;
     const tagY = -124 + idleBob;
 
-    ctx.fillStyle = 'rgba(12, 18, 30, 0.88)';
+    ctx.fillStyle = 'rgba(12, 18, 30, 0.92)';
     ctx.fillRect(-tagW / 2, tagY, tagW, tagH);
     ctx.strokeStyle = isNearby ? '#00d2d3' : 'rgba(0, 210, 211, 0.4)';
     ctx.lineWidth = isNearby ? 2 : 1;
     ctx.strokeRect(-tagW / 2, tagY, tagW, tagH);
 
     ctx.fillStyle = '#00d2d3';
-    ctx.fillText(npc.name || 'NPC', 0, tagY + 13);
+    ctx.fillText(npc.name || 'NPC', 0, tagY + 14);
 
     // Nearby Interaction Prompt [Space: 대화]
     if (isNearby) {
@@ -470,6 +610,7 @@ export class SpriteManager {
 
     ctx.restore();
   }
+
 
   // ----------------------------------------------------
   // 🏝️ CORAL ISLAND TOWN GRAPHICS RENDERERS
@@ -963,5 +1104,323 @@ export class SpriteManager {
 
     ctx.restore();
   }
+
+  // ----------------------------------------------------
+  // 🏰 HIGH/DARK FANTASY STRUCTURE & PROP RENDERERS
+  // ----------------------------------------------------
+
+  // 1. Ancient Mossy Rune Pillar
+  drawAncientPillar(ctx, pillar) {
+    ctx.save();
+    ctx.translate(pillar.x, pillar.y);
+    const h = pillar.height || 180;
+    const w = pillar.width || 44;
+
+    // Base Shadow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, w / 2 + 10, 10, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Pillar Base Pedestal
+    ctx.fillStyle = '#2c3e50';
+    ctx.fillRect(-w / 2 - 8, -20, w + 16, 20);
+    ctx.fillStyle = '#34495e';
+    ctx.fillRect(-w / 2 - 4, -20, w + 8, 4);
+
+    // Pillar Shaft (Granite Column)
+    const pillarGrad = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
+    pillarGrad.addColorStop(0, '#1c2833');
+    pillarGrad.addColorStop(0.3, '#34495e');
+    pillarGrad.addColorStop(0.7, '#5d6d7e');
+    pillarGrad.addColorStop(1, '#1c2833');
+    ctx.fillStyle = pillarGrad;
+    ctx.fillRect(-w / 2, -h + 20, w, h - 40);
+
+    // Glowing Magical Runes Engraved on Column
+    const runeGlow = Math.sin(this.animTime * 3 + pillar.x) * 0.35 + 0.65;
+    const runeColor = pillar.runeColor || '#00d2d3';
+    ctx.fillStyle = runeColor;
+    ctx.globalAlpha = runeGlow;
+    for (let y = -h + 40; y < -30; y += 30) {
+      ctx.fillRect(-6, y, 12, 3);
+      ctx.fillRect(-2, y - 8, 4, 16);
+      ctx.fillRect(-8, y + 4, 4, 4);
+    }
+    ctx.globalAlpha = 1.0;
+
+    // Overgrown Moss & Ivy Vines
+    ctx.fillStyle = '#27ae60';
+    for (let vy = -h + 30; vy < -10; vy += 25) {
+      ctx.fillRect(-w / 2 - 2, vy, 6, 12);
+      ctx.fillRect(w / 2 - 4, vy + 10, 6, 10);
+    }
+
+    // Capital (Top Pillar Cap)
+    ctx.fillStyle = '#2c3e50';
+    ctx.fillRect(-w / 2 - 10, -h, w + 20, 20);
+    ctx.fillStyle = '#5d6d7e';
+    ctx.fillRect(-w / 2 - 6, -h + 16, w + 12, 4);
+
+    ctx.restore();
+  }
+
+  // 2. Flickering Torch & Magic Brazier with Flame Particles & Light Source
+  drawTorch(ctx, torch) {
+    ctx.save();
+    ctx.translate(torch.x, torch.y);
+    const theme = torch.theme || 'fire';
+
+    // Iron Sconce Holder
+    ctx.fillStyle = '#1e272e';
+    ctx.fillRect(-4, -40, 8, 40);
+    ctx.fillRect(-10, -45, 20, 8);
+
+    // Brazier Bowl
+    ctx.beginPath();
+    ctx.moveTo(-14, -45);
+    ctx.lineTo(-18, -60);
+    ctx.lineTo(18, -60);
+    ctx.lineTo(14, -45);
+    ctx.closePath();
+    ctx.fillStyle = '#2c3e50';
+    ctx.fill();
+
+    // Fire Flame Core
+    const fireTime = this.animTime * 10 + torch.x;
+    const flameH = 24 + Math.sin(fireTime * 1.5) * 6;
+    const flameW = 16 + Math.cos(fireTime * 2) * 4;
+
+    const fireGrad = ctx.createRadialGradient(0, -60 - flameH / 2, 2, 0, -60 - flameH / 2, flameH);
+    if (theme === 'blue_magic') {
+      fireGrad.addColorStop(0, '#ffffff');
+      fireGrad.addColorStop(0.4, '#00d2d3');
+      fireGrad.addColorStop(1, 'rgba(9, 132, 227, 0)');
+    } else {
+      fireGrad.addColorStop(0, '#fff200');
+      fireGrad.addColorStop(0.4, '#ff7675');
+      fireGrad.addColorStop(1, 'rgba(214, 48, 49, 0)');
+    }
+
+    ctx.fillStyle = fireGrad;
+    ctx.beginPath();
+    ctx.ellipse(0, -60 - flameH / 2, flameW, flameH, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Rising Flame Ember Particles
+    for (let i = 0; i < 4; i++) {
+      const px = (Math.sin(fireTime + i * 2) * 8);
+      const py = -65 - ((fireTime * 8 + i * 15) % 25);
+      ctx.fillStyle = theme === 'blue_magic' ? '#74b9ff' : '#fffa65';
+      ctx.fillRect(px, py, 2.5, 2.5);
+    }
+
+    // Radial Light Source Glow (Ambient Light Map registration info)
+    const glowRadius = torch.radius || 130;
+    const glowGrad = ctx.createRadialGradient(0, -60, 5, 0, -60, glowRadius);
+    if (theme === 'blue_magic') {
+      glowGrad.addColorStop(0, 'rgba(0, 210, 211, 0.45)');
+      glowGrad.addColorStop(0.5, 'rgba(9, 132, 227, 0.18)');
+      glowGrad.addColorStop(1, 'rgba(9, 132, 227, 0)');
+    } else {
+      glowGrad.addColorStop(0, 'rgba(255, 170, 0, 0.5)');
+      glowGrad.addColorStop(0.5, 'rgba(235, 94, 40, 0.2)');
+      glowGrad.addColorStop(1, 'rgba(235, 94, 40, 0)');
+    }
+
+    ctx.fillStyle = glowGrad;
+    ctx.beginPath();
+    ctx.arc(0, -60, glowRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  // 3. Carved Granite Gargoyle Statue
+  drawGargoyleStatue(ctx, statue) {
+    ctx.save();
+    ctx.translate(statue.x, statue.y);
+
+    // Shadow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 30, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Pedestal
+    ctx.fillStyle = '#2c3e50';
+    ctx.fillRect(-22, -35, 44, 35);
+    ctx.fillStyle = '#1a252f';
+    ctx.fillRect(-26, -35, 52, 6);
+
+    // Gargoyle Silhouette
+    ctx.fillStyle = '#7f8c8d';
+    // Wings
+    ctx.beginPath();
+    ctx.moveTo(-10, -55);
+    ctx.lineTo(-38, -85);
+    ctx.lineTo(-20, -75);
+    ctx.lineTo(-30, -60);
+    ctx.lineTo(-10, -55);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(10, -55);
+    ctx.lineTo(38, -85);
+    ctx.lineTo(20, -75);
+    ctx.lineTo(30, -60);
+    ctx.lineTo(10, -55);
+    ctx.fill();
+
+    // Body & Horned Head
+    ctx.fillStyle = '#95a5a6';
+    ctx.beginPath();
+    ctx.arc(0, -65, 14, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Horns
+    ctx.fillStyle = '#2c3e50';
+    ctx.beginPath();
+    ctx.moveTo(-6, -75);
+    ctx.lineTo(-12, -90);
+    ctx.lineTo(-2, -77);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(6, -75);
+    ctx.lineTo(12, -90);
+    ctx.lineTo(2, -77);
+    ctx.fill();
+
+    // Glowing Eyes
+    ctx.fillStyle = '#e74c3c';
+    ctx.fillRect(-5, -67, 3, 3);
+    ctx.fillRect(2, -67, 3, 3);
+
+    ctx.restore();
+  }
+
+  // 4. Background Animated Lava Waterfall
+  drawLavaWaterfall(ctx, fall) {
+    ctx.save();
+    ctx.translate(fall.x, fall.y);
+    const h = fall.height || 350;
+    const w = fall.width || 60;
+    const anim = (this.animTime * 60 + fall.x) % 40;
+
+    // Lava Stream Back Body
+    const lavaGrad = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
+    lavaGrad.addColorStop(0, '#c0392b');
+    lavaGrad.addColorStop(0.3, '#e74c3c');
+    lavaGrad.addColorStop(0.7, '#f39c12');
+    lavaGrad.addColorStop(1, '#c0392b');
+    ctx.fillStyle = lavaGrad;
+    ctx.fillRect(-w / 2, 0, w, h);
+
+    // Cascading Bright Yellow Magma Ribbons
+    ctx.fillStyle = '#fffa65';
+    for (let y = anim - 40; y < h; y += 40) {
+      ctx.fillRect(-w / 2 + 10, y, w - 20, 8);
+      ctx.fillRect(-w / 2 + 5, y + 20, w / 2, 6);
+    }
+
+    // Bottom Magma Pool Splash Particles
+    ctx.fillStyle = '#ff7675';
+    for (let i = 0; i < 8; i++) {
+      const sx = -w / 2 + ((i * 17 + anim * 2) % w);
+      const sy = h - 5 - (i * 3 + Math.sin(this.animTime * 5 + i) * 10);
+      ctx.fillRect(sx, sy, 4, 4);
+    }
+
+    ctx.restore();
+  }
+
+  // 5. Glowing Magical Crystal Cluster
+  drawCrystalCluster(ctx, crystal) {
+    ctx.save();
+    ctx.translate(crystal.x, crystal.y);
+    const color = crystal.color || '#00d2d3';
+    const pulse = Math.sin(this.animTime * 4 + crystal.x) * 0.15 + 0.85;
+
+    // Crystal Shards
+    const shards = [
+      { x: 0, h: 42, w: 12, rot: 0 },
+      { x: -10, h: 32, w: 9, rot: -0.25 },
+      { x: 10, h: 35, w: 10, rot: 0.2 },
+      { x: -18, h: 22, w: 7, rot: -0.45 },
+      { x: 18, h: 24, w: 8, rot: 0.4 }
+    ];
+
+    shards.forEach(s => {
+      ctx.save();
+      ctx.translate(s.x, 0);
+      ctx.rotate(s.rot);
+
+      ctx.fillStyle = color;
+      ctx.globalAlpha = pulse;
+      ctx.beginPath();
+      ctx.moveTo(0, -s.h);
+      ctx.lineTo(-s.w / 2, -10);
+      ctx.lineTo(0, 0);
+      ctx.lineTo(s.w / 2, -10);
+      ctx.closePath();
+      ctx.fill();
+
+      // Highlight Edge
+      ctx.fillStyle = '#ffffff';
+      ctx.globalAlpha = pulse * 0.6;
+      ctx.beginPath();
+      ctx.moveTo(0, -s.h);
+      ctx.lineTo(-s.w / 2, -10);
+      ctx.lineTo(0, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.restore();
+    });
+
+    // Ambient Glow
+    const glowGrad = ctx.createRadialGradient(0, -20, 2, 0, -20, 60);
+    glowGrad.addColorStop(0, color);
+    glowGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = glowGrad;
+    ctx.globalAlpha = pulse * 0.4;
+    ctx.beginPath();
+    ctx.arc(0, -20, 60, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  // 6. Ancient Gothic Ruin Archway
+  drawGothicArch(ctx, arch) {
+    ctx.save();
+    ctx.translate(arch.x, arch.y);
+    const w = arch.width || 220;
+    const h = arch.height || 260;
+
+    // Two Columns
+    ctx.fillStyle = '#2c3e50';
+    ctx.fillRect(-w / 2, -h, 36, h);
+    ctx.fillRect(w / 2 - 36, -h, 36, h);
+
+    // Gothic Pointed Arch Apex
+    ctx.beginPath();
+    ctx.moveTo(-w / 2 - 10, -h);
+    ctx.quadraticCurveTo(-w / 4, -h - 70, 0, -h - 95);
+    ctx.quadraticCurveTo(w / 4, -h - 70, w / 2 + 10, -h);
+    ctx.lineTo(w / 2 - 36, -h);
+    ctx.quadraticCurveTo(w / 4, -h - 35, 0, -h - 55);
+    ctx.quadraticCurveTo(-w / 4, -h - 35, -w / 2 + 36, -h);
+    ctx.closePath();
+    ctx.fillStyle = '#34495e';
+    ctx.fill();
+
+    // Keystone Jewel in Arch Center
+    ctx.fillStyle = '#f1c40f';
+    ctx.fillRect(-8, -h - 90, 16, 18);
+
+    ctx.restore();
+  }
 }
+
 

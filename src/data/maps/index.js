@@ -37,6 +37,28 @@ export const MAP_REGISTRY = {
       { x: 450, y: 920, targetMap: 'map2', targetX: 150, targetY: 920, label: '수련 고원 [W]' },
       { x: 1850, y: 920, targetMap: 'map4', targetX: 300, targetY: 1320, label: '코랄 마을 [W]' }
     ],
+    // 🏛️ HIGH FANTASY RUIN STRUCTURES & LIGHTING
+    pillars: [
+      { x: 300, y: 920, height: 200, width: 48, runeColor: '#00d2d3' },
+      { x: 740, y: 600, height: 160, width: 44, runeColor: '#00d2d3' },
+      { x: 1420, y: 420, height: 220, width: 52, runeColor: '#f1c40f' },
+      { x: 2100, y: 920, height: 210, width: 48, runeColor: '#00d2d3' }
+    ],
+    torches: [
+      { x: 200, y: 920, theme: 'blue_magic', radius: 150 },
+      { x: 600, y: 920, theme: 'fire', radius: 140 },
+      { x: 1260, y: 420, theme: 'blue_magic', radius: 160 },
+      { x: 1600, y: 920, theme: 'fire', radius: 140 },
+      { x: 2200, y: 920, theme: 'blue_magic', radius: 150 }
+    ],
+    crystals: [
+      { x: 640, y: 600, color: '#00d2d3' },
+      { x: 1430, y: 420, color: '#54a0ff' },
+      { x: 1720, y: 580, color: '#00d2d3' }
+    ],
+    gothicArches: [
+      { x: 1260, y: 920, width: 240, height: 280 }
+    ],
     npcs: getNPCsForMap('map1')
   },
   map2: {
@@ -69,6 +91,23 @@ export const MAP_REGISTRY = {
       { x: 150, y: 920, targetMap: 'map1', targetX: 450, targetY: 920, label: '수호의 숲 [W]' },
       { x: 600, y: 920, targetMap: 'map3', targetX: 150, targetY: 920, label: '용암 동굴 [W]' },
       { x: 1800, y: 920, targetMap: 'map4', targetX: 2400, targetY: 1320, label: '코랄 마을 [W]' }
+    ],
+    // 🏰 HIGH FANTASY HIGHLAND STATUES & BRAZIERS
+    gargoyles: [
+      { x: 820, y: 520 },
+      { x: 1580, y: 520 },
+      { x: 2040, y: 780 }
+    ],
+    torches: [
+      { x: 300, y: 920, theme: 'fire', radius: 150 },
+      { x: 800, y: 520, theme: 'fire', radius: 160 },
+      { x: 1200, y: 360, theme: 'fire', radius: 170 },
+      { x: 1600, y: 520, theme: 'fire', radius: 160 },
+      { x: 2200, y: 920, theme: 'fire', radius: 150 }
+    ],
+    pillars: [
+      { x: 1000, y: 360, height: 160, width: 40, runeColor: '#ffaa00' },
+      { x: 1400, y: 360, height: 160, width: 40, runeColor: '#ffaa00' }
     ],
     npcs: getNPCsForMap('map2')
   },
@@ -103,6 +142,26 @@ export const MAP_REGISTRY = {
     portals: [
       { x: 150, y: 920, targetMap: 'map2', targetX: 600, targetY: 920, label: '수련 고원 [W]' },
       { x: 1950, y: 920, targetMap: 'map4', targetX: 4500, targetY: 1320, label: '코랄 마을 [W]' }
+    ],
+    // 🌋 DARK FANTASY VOLCANIC STRUCTURES
+    lavaFalls: [
+      { x: 450, y: 200, width: 70, height: 720 },
+      { x: 1750, y: 200, width: 80, height: 720 }
+    ],
+    torches: [
+      { x: 300, y: 920, theme: 'fire', radius: 180 },
+      { x: 960, y: 490, theme: 'fire', radius: 190 },
+      { x: 1440, y: 490, theme: 'fire', radius: 190 },
+      { x: 2100, y: 920, theme: 'fire', radius: 180 }
+    ],
+    crystals: [
+      { x: 800, y: 580, color: '#e74c3c' },
+      { x: 1200, y: 490, color: '#ff7675' },
+      { x: 1490, y: 580, color: '#e74c3c' }
+    ],
+    pillars: [
+      { x: 960, y: 490, height: 180, width: 44, runeColor: '#e74c3c' },
+      { x: 1440, y: 490, height: 180, width: 44, runeColor: '#e74c3c' }
     ],
     npcs: getNPCsForMap('map3')
   },

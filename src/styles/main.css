@@ -278,3 +278,70 @@ body, html {
   align-self: flex-end;
   margin-top: 4px;
 }
+
+/* Quest Tracker HUD UI */
+.top-left-group {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.quest-card {
+  width: 280px;
+  background: rgba(15, 18, 28, 0.88);
+  backdrop-filter: blur(10px);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 170, 0, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 15px rgba(255, 170, 0, 0.1);
+  padding: 12px 16px;
+}
+
+.quest-header {
+  font-size: 11px;
+  font-weight: 800;
+  color: #ffaa00;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 170, 0, 0.2);
+  padding-bottom: 4px;
+}
+
+.quest-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.quest-desc {
+  font-size: 11px;
+  line-height: 1.4;
+  color: #cbd5e1;
+}
+
+.dialog-quest-action {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-quest {
+  background: linear-gradient(135deg, #ffaa00, #d35400);
+  border: none;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(255, 170, 0, 0.4);
+  transition: transform 0.15s ease;
+}
+
+.btn-quest:hover {
+  transform: scale(1.05);
+}
+
